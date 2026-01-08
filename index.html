@@ -1,112 +1,267 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customs Pro - Secure Portal</title>
+    <title>Customs Pro | Secure Management System</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        :root { --primary: #1a73e8; --dark: #2c3e50; --danger: #d93025; --success: #1e8e3e; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; color: #333; }
-        
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #1557b0;
+            --success: #1e8e3e;
+            --danger: #d93025;
+            --bg: #f8f9fa;
+            --text-main: #202124;
+            --card-shadow: 0 1px 3px rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            line-height: 1.5;
+        }
+
         /* Login Screen */
-        #loginScreen { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: white; text-align: center; }
-        .login-card { padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); width: 320px; }
-        
-        /* Dashboard Layout */
-        #dashboard { display: none; padding: 20px; max-width: 1400px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        
-        .user-info { display: flex; align-items: center; gap: 12px; }
-        .user-info img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary); }
-        .user-email { font-weight: 600; font-size: 14px; color: var(--dark); }
+        #loginScreen {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
 
-        /* Forms & Cards */
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; transition: 0.3s; }
-        input:focus { border-color: var(--primary); }
-        
-        /* Summary Box */
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .sum-card { background: var(--dark); color: white; padding: 20px; border-radius: 12px; text-align: center; }
-        .sum-card b { font-size: 24px; color: #ffc107; display: block; margin-top: 5px; }
-        .sum-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #adb5bd; }
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            text-align: center;
+            width: 100%;
+            max-width: 360px;
+        }
 
-        /* Table Styles */
-        .table-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px; text-align: center; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; color: var(--dark); font-weight: 600; }
-        .status-paid { color: var(--success); font-weight: bold; }
-        .status-pending { color: var(--danger); font-weight: bold; }
-        .user-tag { background: #e3f2fd; color: #1565c0; padding: 3px 8px; border-radius: 6px; font-size: 11px; }
+        /* Dashboard */
+        #dashboard {
+            display: none; /* Hidden until login */
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
 
-        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .btn-save { background: var(--success); color: white; width: 100%; }
-        .btn-logout { background: #f1f3f4; color: #5f6368; }
-        .btn-logout:hover { background: #e8eaed; }
-        .btn-del { background: #feeae6; color: var(--danger); padding: 5px 10px; font-size: 12px; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #dadce0;
+            margin-bottom: 25px;
+        }
 
-        @media print { .no-print { display: none !important; } #dashboard { display: block !important; padding: 0; } }
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-profile img {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+        }
+
+        .user-details b {
+            display: block;
+            font-size: 14px;
+        }
+
+        .user-details span {
+            font-size: 12px;
+            color: #5f6368;
+        }
+
+        /* Stats Cards */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3);
+            text-align: center;
+        }
+
+        .stat-card span {
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: #5f6368;
+        }
+
+        .stat-card h2 {
+            margin: 10px 0 0;
+            font-size: 28px;
+            color: var(--primary);
+        }
+
+        /* Form Styling */
+        .form-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3);
+        }
+
+        .grid-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        input {
+            padding: 12px 15px;
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-submit { background: var(--primary); color: white; }
+        .btn-submit:hover { background: var(--primary-dark); }
+        .btn-logout { background: transparent; border: 1px solid #dadce0; color: #5f6368; }
+        .btn-logout:hover { background: #f1f3f4; }
+
+        /* Table Styling */
+        .table-wrapper {
+            background: white;
+            border-radius: 12px;
+            overflow-x: auto;
+            box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f1f3f4;
+            padding: 15px;
+            font-size: 13px;
+            text-align: left;
+            color: #5f6368;
+        }
+
+        td {
+            padding: 15px;
+            border-top: 1px solid #eee;
+            font-size: 14px;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .badge-pending { background: #fef7e0; color: #b06000; }
+        .badge-paid { background: #e6f4ea; color: #137333; }
+
+        @media print {
+            .no-print { display: none !important; }
+            #dashboard { display: block !important; padding: 0; }
+        }
     </style>
 </head>
 <body>
 
 <div id="loginScreen">
     <div class="login-card">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="50" alt="Google">
-        <h2 style="color:var(--dark);">Customs Portal</h2>
-        <p style="color:#666; font-size: 14px;">আপনার জিমেইল একাউন্ট ব্যবহার করে লগইন করুন</p>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="48" alt="G">
+        <h2 style="margin: 20px 0 10px;">Customs Portal</h2>
+        <p style="color: #5f6368; margin-bottom: 30px;">Sign in with your Google account to access your dashboard.</p>
         <div id="g_id_signin"></div>
     </div>
 </div>
 
 <div id="dashboard">
-    <div class="header no-print">
-        <div class="user-info">
-            <img id="userImg" src="" alt="Profile">
-            <div>
-                <div class="user-email" id="userEmail"></div>
-                <small id="userRole" style="color: var(--primary);"></small>
+    <div class="header">
+        <div class="user-profile">
+            <img id="userImg" src="" alt="User">
+            <div class="user-details">
+                <b id="userName">User Name</b>
+                <span id="userEmail">email@example.com</span>
             </div>
         </div>
-        <div style="display:flex; gap:10px;">
+        <div class="no-print">
             <button class="btn btn-logout" onclick="window.print()">Print Report</button>
-            <button class="btn btn-logout" onclick="logout()">Logout</button>
+            <button class="btn btn-logout" onclick="logout()" style="margin-left: 10px;">Sign Out</button>
         </div>
     </div>
 
-    <div class="card no-print" id="entryFormSection">
-        <h3 style="margin-top:0; font-size: 18px;">নতুন বি/ই এন্ট্রি</h3>
-        <form id="beForm" class="form-grid">
-            <input type="text" id="ain" placeholder="AIN No" required>
+    <div class="stats-container">
+        <div class="stat-card">
+            <span>Total B/E Entries</span>
+            <h2 id="totalCount">0</h2>
+        </div>
+        <div class="stat-card">
+            <span>My Entries</span>
+            <h2 id="myCount">0</h2>
+        </div>
+        <div class="stat-card">
+            <span>Total Duty</span>
+            <h2 id="totalDuty">$ 0.00</h2>
+        </div>
+    </div>
+
+    <div class="form-card no-print" id="entrySection">
+        <h4 style="margin: 0 0 20px;">New Record Entry</h4>
+        <form id="recordForm" class="grid-form">
+            <input type="text" id="ain" placeholder="AIN Number" required>
             <input type="text" id="beNo" placeholder="B/E Number" required>
-            <input type="number" id="duty" placeholder="Duty Amount" step="any" required>
-            <button type="submit" class="btn btn-save">Save Entry</button>
+            <input type="number" id="duty" placeholder="Duty Amount" step="0.01" required>
+            <button type="submit" class="btn btn-submit">Save Record</button>
         </form>
     </div>
 
-    <div class="summary-grid">
-        <div class="sum-card"><span class="sum-label">Total BE</span><b id="countTotal">0</b></div>
-        <div class="sum-card"><span class="sum-label">My Entries</span><b id="countMine">0</b></div>
-        <div class="sum-card"><span class="sum-label">Total Duty</span><b id="sumDuty">0</b></div>
-        <div class="sum-card"><span class="sum-label">Paid Records</span><b id="countPaid">0</b></div>
-    </div>
-
-    <div class="table-container">
+    <div class="table-wrapper">
         <table>
             <thead>
                 <tr>
-                    <th>তারিখ</th>
-                    <th>ইউজার</th>
-                    <th>বি/ই নাম্বার</th>
-                    <th>ডিউটি</th>
-                    <th>অবস্থা</th>
-                    <th class="no-print">অ্যাকশন</th>
+                    <th>Date</th>
+                    <th>Entered By</th>
+                    <th>B/E Number</th>
+                    <th>Duty Amt</th>
+                    <th>Status</th>
+                    <th class="no-print">Action</th>
                 </tr>
             </thead>
-            <tbody id="dataTableBody"></tbody>
+            <tbody id="tableBody">
+                </tbody>
         </table>
     </div>
 </div>
@@ -115,12 +270,12 @@
     const CLIENT_ID = "892484000034-a40kgtia2ne0j8g9j42g8jspvou957i7.apps.googleusercontent.com";
     const API_URL = "https://sheetdb.io/api/v1/vont79v8eejj0";
     
-    // এখানে আপনার নিজের জিমেইল দিন অ্যাডমিন এক্সেস পেতে
+    // REPLACE THIS WITH YOUR EMAIL TO SEE ALL DATA
     const ADMIN_EMAIL = "mdyusufcbc@gmail.com"; 
 
-    let loggedInUser = null;
+    let currentUser = null;
 
-    // ১. গুগল লগইন ইনিশিয়ালাইজেশন
+    // Initialize Google Auth
     window.onload = function () {
         google.accounts.id.initialize({
             client_id: CLIENT_ID,
@@ -128,74 +283,77 @@
         });
         google.accounts.id.renderButton(
             document.getElementById("g_id_signin"),
-            { theme: "outline", size: "large", width: "250" }
+            { theme: "outline", size: "large", width: "100%" }
         );
     }
 
     function handleCredentialResponse(response) {
         const payload = JSON.parse(atob(response.credential.split('.')[1]));
-        loggedInUser = payload;
+        currentUser = payload;
         
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         
-        document.getElementById('userEmail').innerText = loggedInUser.email;
-        document.getElementById('userImg').src = loggedInUser.picture;
-        document.getElementById('userRole').innerText = (loggedInUser.email === ADMIN_EMAIL) ? "Administrator" : "Entry User";
+        document.getElementById('userName').innerText = currentUser.name;
+        document.getElementById('userEmail').innerText = currentUser.email;
+        document.getElementById('userImg').src = currentUser.picture;
         
-        fetchRecords();
+        loadData();
     }
 
     function logout() { location.reload(); }
 
-    // ২. ডাটাবেজ অপারেশনস
-    async function fetchRecords() {
-        const res = await fetch(API_URL);
-        const data = await res.json();
-        renderTable(data);
+    // Fetch and Render Data
+    async function loadData() {
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            renderTable(data);
+        } catch (err) {
+            console.error("Failed to fetch data", err);
+        }
     }
 
     function renderTable(data) {
-        const tbody = document.getElementById('dataTableBody');
+        const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
         
-        let totalDuty = 0, mine = 0, paid = 0;
+        let dSum = 0, mCount = 0;
 
         data.slice().reverse().forEach(item => {
-            // সিকিউরিটি ফিল্টার: অ্যাডমিন সব দেখবে, ইউজার শুধু নিজেরটা
-            const isAdmin = (loggedInUser.email === ADMIN_EMAIL);
-            if (isAdmin || item.user === loggedInUser.email) {
-                
-                if (item.user === loggedInUser.email) mine++;
-                if (item.status === 'Paid') paid++;
-                totalDuty += parseFloat(item.duty || 0);
+            const isAdmin = (currentUser.email === ADMIN_EMAIL);
+            // Privacy filter: Users see only their own, Admin sees all
+            if (isAdmin || item.user === currentUser.email) {
+                if (item.user === currentUser.email) mCount++;
+                dSum += parseFloat(item.duty || 0);
+
+                const statusClass = item.status === 'Paid' ? 'badge-paid' : 'badge-pending';
 
                 tbody.innerHTML += `
                     <tr>
                         <td>${item.date}</td>
-                        <td><span class="user-tag">${item.user}</span></td>
+                        <td><small>${item.user}</small></td>
                         <td><b>${item.beNo}</b></td>
-                        <td>${parseFloat(item.duty).toLocaleString()}</td>
-                        <td><span class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</span></td>
+                        <td>${parseFloat(item.duty).toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                        <td><span class="badge ${statusClass}">${item.status || 'Pending'}</span></td>
                         <td class="no-print">
-                            <button class="btn btn-del" onclick="deleteRecord('${item.beNo}')">Delete</button>
+                            <button onclick="deleteRow('${item.beNo}')" style="background:none; border:none; color:var(--danger); cursor:pointer;">Delete</button>
                         </td>
                     </tr>`;
             }
         });
 
-        document.getElementById('countTotal').innerText = data.length;
-        document.getElementById('countMine').innerText = mine;
-        document.getElementById('countPaid').innerText = paid;
-        document.getElementById('sumDuty').innerText = totalDuty.toLocaleString();
+        document.getElementById('totalCount').innerText = data.length;
+        document.getElementById('myCount').innerText = mCount;
+        document.getElementById('totalDuty').innerText = dSum.toLocaleString(undefined, {style: 'currency', currency: 'USD'});
     }
 
-    // ৩. ডাটা সেভ করা
-    document.getElementById('beForm').addEventListener('submit', async (e) => {
+    // Handle Form Submission
+    document.getElementById('recordForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const payload = {
+        const newRecord = {
             date: new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
-            user: loggedInUser.email,
+            user: currentUser.email,
             ain: document.getElementById('ain').value,
             beNo: document.getElementById('beNo').value,
             duty: document.getElementById('duty').value,
@@ -205,19 +363,19 @@
         const res = await fetch(API_URL, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ data: [payload] })
+            body: JSON.stringify({ data: [newRecord] })
         });
 
         if(res.ok) {
-            document.getElementById('beForm').reset();
-            fetchRecords();
+            document.getElementById('recordForm').reset();
+            loadData();
         }
     });
 
-    async function deleteRecord(beNo) {
-        if(confirm("Are you sure to delete?")) {
+    async function deleteRow(beNo) {
+        if(confirm("Confirm deletion of B/E: " + beNo + "?")) {
             await fetch(`${API_URL}/beNo/${beNo}`, { method: 'DELETE' });
-            fetchRecords();
+            loadData();
         }
     }
 </script>
