@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customs Pro | Daily Dashboard</title>
+    <title>Customs Pro | Admin Dashboard</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
@@ -25,11 +25,13 @@
         input, select { padding: 10px; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
         .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
         .btn-save { background: var(--success); color: white; width: 100%; }
+        .btn-today { background: #607d8b; color: white; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; }
         th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f1f3f4; color: #5f6368; }
         .status-paid { color: var(--success); font-weight: bold; }
         .status-pending { color: var(--danger); font-weight: bold; }
+        #adminTools { display: none; } /* ডিফল্টভাবে হাইড থাকবে */
         @media print { .no-print { display: none !important; } #dashboard { display: block !important; } }
     </style>
 </head>
@@ -56,8 +58,8 @@
     </div>
 
     <div class="stats-grid">
-        <div class="stat-card">Today's Entries <b id="statMine">0</b></div>
-        <div class="stat-card">Today's Duty <b id="statDuty">0.00</b></div>
+        <div class="stat-card">Records <b id="statMine">0</b></div>
+        <div class="stat-card">Total Duty <b id="statDuty">0.00</b></div>
         <div class="stat-card">Cash Received <b id="statCash">0.00</b></div>
         <div class="stat-card">Net Profit <b id="statProfit">0.00</b></div>
     </div>
@@ -79,8 +81,17 @@
         <div class="form-grid">
             <input type="date" id="startDate">
             <input type="date" id="endDate">
-            <button class="btn" style="background:var(--dark); color:white;" onclick="applyDateFilter()">Apply Filter</button>
-            <button class="btn" onclick="loadRecords()">Today's Data</button>
+            
+            <div id="adminTools">
+                <select id="userFilter" onchange="applyAllFilters()">
+                    <option value="all">All Users</option>
+                </select>
+            </div>
+
+            <div style="display: flex; gap: 5px;">
+                <button class="btn" style="background:var(--dark); color:white; flex:1;" onclick="applyAllFilters()">Apply Filter</button>
+                <button class="btn btn-today" style="flex:1;" onclick="loadTodayData()">Today</button>
+            </div>
             <input type="text" id="searchBox" placeholder="Search B/E or AIN..." onkeyup="textFilter()">
         </div>
     </div>
@@ -138,6 +149,11 @@
         document.getElementById('userName').innerText = currentUser.name;
         document.getElementById('userEmail').innerText = currentUser.email;
         document.getElementById('userImg').src = currentUser.picture;
+        
+        if(currentUser.email === ADMIN_EMAIL) {
+            document.getElementById('adminTools').style.display = 'block';
+        }
+
         fetch(AIN_URL).then(res => res.json()).then(data => ainDatabase = data).catch(e => {});
         loadRecords();
     }
@@ -151,24 +167,53 @@
         const res = await fetch(API_URL);
         allRecords = await res.json();
         
-        // হোমপেজে শুধু আজকের ডাটা ফিল্টার করার লজিক
-        const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
-        const todayData = allRecords.filter(item => item.date === today);
-        
-        renderTable(todayData);
+        if(currentUser.email === ADMIN_EMAIL) {
+            updateUserDropdown();
+        }
+        loadTodayData();
     }
 
-    function applyDateFilter() {
+    function updateUserDropdown() {
+        const select = document.getElementById('userFilter');
+        const users = [...new Set(allRecords.map(item => item.user))];
+        select.innerHTML = '<option value="all">All Users</option>';
+        users.forEach(user => {
+            select.innerHTML += `<option value="${user}">${user.split('@')[0]}</option>`;
+        });
+    }
+
+    function loadTodayData() {
+        const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+        const todayData = allRecords.filter(item => item.date === today);
+        renderTable(todayData);
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        if(document.getElementById('userFilter')) document.getElementById('userFilter').value = 'all';
+    }
+
+    function applyAllFilters() {
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
-        if(!start || !end) return;
-        const dStart = new Date(start);
-        const dEnd = new Date(end);
-        const filtered = allRecords.filter(item => {
-            const [d, m, y] = item.date.split('-');
-            const itemDate = new Date(y, m - 1, d);
-            return itemDate >= dStart && itemDate <= dEnd;
-        });
+        const selectedUser = document.getElementById('userFilter').value;
+        
+        let filtered = allRecords;
+
+        // User Filter (Admin Only)
+        if (currentUser.email === ADMIN_EMAIL && selectedUser !== 'all') {
+            filtered = filtered.filter(item => item.user === selectedUser);
+        }
+
+        // Date Filter
+        if(start && end) {
+            const dStart = new Date(start);
+            const dEnd = new Date(end);
+            filtered = filtered.filter(item => {
+                const [d, m, y] = item.date.split('-');
+                const itemDate = new Date(y, m - 1, d);
+                return itemDate >= dStart && itemDate <= dEnd;
+            });
+        }
+        
         renderTable(filtered);
     }
 
@@ -185,7 +230,8 @@
         const isAdmin = (currentUser.email === ADMIN_EMAIL);
 
         data.slice().reverse().forEach(item => {
-            if (item.user === currentUser.email || isAdmin) {
+            // General user sees only their data, Admin sees according to filter
+            if (isAdmin || item.user === currentUser.email) {
                 dSum += parseFloat(item.duty || 0);
                 cSum += parseFloat(item.cash || 0);
                 pSum += parseFloat(item.profit || 0);
@@ -208,9 +254,9 @@
             }
         });
         document.getElementById('statMine').innerText = data.length;
-        document.getElementById('statDuty').innerText = dSum.toLocaleString();
-        document.getElementById('statCash').innerText = cSum.toLocaleString();
-        document.getElementById('statProfit').innerText = pSum.toLocaleString();
+        document.getElementById('statDuty').innerText = dSum.toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('statCash').innerText = cSum.toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('statProfit').innerText = pSum.toLocaleString(undefined, {minimumFractionDigits: 2});
     }
 
     function handleAINAutoFill() {
@@ -233,7 +279,7 @@
         };
         await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [payload] }) });
         document.getElementById('beForm').reset();
-        loadRecords(); // সেভ করার পর অটো আজকের ডাটা রিলোড হবে
+        loadRecords();
     };
 
     async function updatePayment(beNo, duty) {
