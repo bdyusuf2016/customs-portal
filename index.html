@@ -2,169 +2,224 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <title>Customs Pro - Google Auth System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customs Pro - Secure Portal</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; }
-        #loginScreen { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: white; }
-        .dashboard { display: none; padding: 20px; max-width: 1400px; margin: auto; }
+        :root { --primary: #1a73e8; --dark: #2c3e50; --danger: #d93025; --success: #1e8e3e; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; color: #333; }
         
-        /* Profile Section */
-        .user-profile { display: flex; align-items: center; gap: 10px; background: #fff; padding: 5px 15px; border-radius: 50px; border: 1px solid #ddd; }
-        .user-profile img { width: 35px; height: 35px; border-radius: 50%; }
+        /* Login Screen */
+        #loginScreen { height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: white; text-align: center; }
+        .login-card { padding: 40px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); width: 320px; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        /* Dashboard Layout */
+        #dashboard { display: none; padding: 20px; max-width: 1400px; margin: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .user-info img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary); }
+        .user-email { font-weight: 600; font-size: 14px; color: var(--dark); }
+
+        /* Forms & Cards */
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--primary); }
         
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .sum-item { background: #2c3e50; color: white; padding: 15px; border-radius: 10px; text-align: center; }
-        .sum-item b { font-size: 20px; color: #ffc107; display: block; }
-        
-        table { width: 100%; border-collapse: collapse; background: white; }
-        th, td { padding: 12px; border: 1px solid #eee; text-align: center; }
-        th { background: #f8f9fa; }
-        
-        .btn-logout { background: #ff4d4d; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; }
+        /* Summary Box */
+        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .sum-card { background: var(--dark); color: white; padding: 20px; border-radius: 12px; text-align: center; }
+        .sum-card b { font-size: 24px; color: #ffc107; display: block; margin-top: 5px; }
+        .sum-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #adb5bd; }
+
+        /* Table Styles */
+        .table-container { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: center; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: var(--dark); font-weight: 600; }
+        .status-paid { color: var(--success); font-weight: bold; }
+        .status-pending { color: var(--danger); font-weight: bold; }
+        .user-tag { background: #e3f2fd; color: #1565c0; padding: 3px 8px; border-radius: 6px; font-size: 11px; }
+
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-save { background: var(--success); color: white; width: 100%; }
+        .btn-logout { background: #f1f3f4; color: #5f6368; }
+        .btn-logout:hover { background: #e8eaed; }
+        .btn-del { background: #feeae6; color: var(--danger); padding: 5px 10px; font-size: 12px; }
+
+        @media print { .no-print { display: none !important; } #dashboard { display: block !important; padding: 0; } }
     </style>
 </head>
 <body>
 
 <div id="loginScreen">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png" width="50" alt="Google">
-    <h2>Customs B/E Portal</h2>
-    <p>আপনার প্রাতিষ্ঠানিক জিমেইল দিয়ে লগইন করুন</p>
-    <div id="buttonDiv"></div>
+    <div class="login-card">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="50" alt="Google">
+        <h2 style="color:var(--dark);">Customs Portal</h2>
+        <p style="color:#666; font-size: 14px;">আপনার জিমেইল একাউন্ট ব্যবহার করে লগইন করুন</p>
+        <div id="g_id_signin"></div>
+    </div>
 </div>
 
-<div id="dashboard" class="dashboard">
-    <div class="header">
-        <h2 style="color: #1a73e8; margin: 0;">Dashboard Overview</h2>
-        <div style="display: flex; gap: 15px; align-items: center;">
-            <div class="user-profile">
-                <img id="userImg" src="" alt="User">
-                <span id="userName" style="font-weight: bold; font-size: 14px;"></span>
+<div id="dashboard">
+    <div class="header no-print">
+        <div class="user-info">
+            <img id="userImg" src="" alt="Profile">
+            <div>
+                <div class="user-email" id="userEmail"></div>
+                <small id="userRole" style="color: var(--primary);"></small>
             </div>
-            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn btn-logout" onclick="window.print()">Print Report</button>
+            <button class="btn btn-logout" onclick="logout()">Logout</button>
         </div>
     </div>
 
-    <div class="card" id="entryArea">
-        <form id="beForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-            <input type="text" id="ain" placeholder="AIN No" oninput="autoFillName()" required>
-            <input type="text" id="declarant" placeholder="Declarant Name" readonly>
+    <div class="card no-print" id="entryFormSection">
+        <h3 style="margin-top:0; font-size: 18px;">নতুন বি/ই এন্ট্রি</h3>
+        <form id="beForm" class="form-grid">
+            <input type="text" id="ain" placeholder="AIN No" required>
             <input type="text" id="beNo" placeholder="B/E Number" required>
-            <input type="number" id="duty" placeholder="Duty Amount" required>
-            <button type="submit" style="background:#28a745; color:white; border:none; border-radius:5px; cursor:pointer;">Save Record</button>
+            <input type="number" id="duty" placeholder="Duty Amount" step="any" required>
+            <button type="submit" class="btn btn-save">Save Entry</button>
         </form>
     </div>
 
     <div class="summary-grid">
-        <div class="sum-item">Total Records <b id="countTotal">0</b></div>
-        <div class="sum-item">My Entries <b id="countMine">0</b></div>
-        <div class="sum-item">Total Duty <b id="sumDuty">0</b></div>
+        <div class="sum-card"><span class="sum-label">Total BE</span><b id="countTotal">0</b></div>
+        <div class="sum-card"><span class="sum-label">My Entries</span><b id="countMine">0</b></div>
+        <div class="sum-card"><span class="sum-label">Total Duty</span><b id="sumDuty">0</b></div>
+        <div class="sum-card"><span class="sum-label">Paid Records</span><b id="countPaid">0</b></div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Entered By (Email)</th>
-                <th>B/E Info</th>
-                <th>Duty</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody id="dataTable"></tbody>
-    </table>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>তারিখ</th>
+                    <th>ইউজার</th>
+                    <th>বি/ই নাম্বার</th>
+                    <th>ডিউটি</th>
+                    <th>অবস্থা</th>
+                    <th class="no-print">অ্যাকশন</th>
+                </tr>
+            </thead>
+            <tbody id="dataTableBody"></tbody>
+        </table>
+    </div>
 </div>
 
 <script>
-    const CLIENT_ID = "892484000034-a40kgtia2ne0j8g9j42g8jspvou957i7.apps.googleusercontent.com"; 
+    const CLIENT_ID = "892484000034-a40kgtia2ne0j8g9j42g8jspvou957i7.apps.googleusercontent.com";
     const API_URL = "https://sheetdb.io/api/v1/vont79v8eejj0";
-    let userData = null;
+    
+    // এখানে আপনার নিজের জিমেইল দিন অ্যাডমিন এক্সেস পেতে
+    const ADMIN_EMAIL = "mdyusufcbc@gmail.com"; 
 
-    // ১. গুগল লগইন সেটআপ
+    let loggedInUser = null;
+
+    // ১. গুগল লগইন ইনিশিয়ালাইজেশন
     window.onload = function () {
         google.accounts.id.initialize({
             client_id: CLIENT_ID,
             callback: handleCredentialResponse
         });
         google.accounts.id.renderButton(
-            document.getElementById("buttonDiv"),
-            { theme: "outline", size: "large", width: 250 }
+            document.getElementById("g_id_signin"),
+            { theme: "outline", size: "large", width: "250" }
         );
     }
 
     function handleCredentialResponse(response) {
-        // টোকেন ডিকোড করে ইউজারের তথ্য নেওয়া
         const payload = JSON.parse(atob(response.credential.split('.')[1]));
-        userData = payload;
+        loggedInUser = payload;
         
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         
-        document.getElementById('userName').innerText = userData.email;
-        document.getElementById('userImg').src = userData.picture;
+        document.getElementById('userEmail').innerText = loggedInUser.email;
+        document.getElementById('userImg').src = loggedInUser.picture;
+        document.getElementById('userRole').innerText = (loggedInUser.email === ADMIN_EMAIL) ? "Administrator" : "Entry User";
         
         fetchRecords();
     }
 
-    function logout() {
-        location.reload();
-    }
+    function logout() { location.reload(); }
 
-    // ২. ডাটাবেজ কাজ
+    // ২. ডাটাবেজ অপারেশনস
     async function fetchRecords() {
         const res = await fetch(API_URL);
         const data = await res.json();
-        renderData(data);
+        renderTable(data);
     }
 
-    function renderData(data) {
-        const tbody = document.getElementById('dataTable');
+    function renderTable(data) {
+        const tbody = document.getElementById('dataTableBody');
         tbody.innerHTML = '';
-        let mine = 0, totalDuty = 0;
+        
+        let totalDuty = 0, mine = 0, paid = 0;
 
         data.slice().reverse().forEach(item => {
-            // সিকিউরিটি ফিল্টার: অ্যাডমিন না হলে শুধু নিজের ডাটা দেখবে
-            const isAdmin = (userData.email === "admin@gmail.com"); // আপনার অ্যাডমিন মেইল দিন
-            if (isAdmin || item.user === userData.email) {
-                if (item.user === userData.email) mine++;
+            // সিকিউরিটি ফিল্টার: অ্যাডমিন সব দেখবে, ইউজার শুধু নিজেরটা
+            const isAdmin = (loggedInUser.email === ADMIN_EMAIL);
+            if (isAdmin || item.user === loggedInUser.email) {
+                
+                if (item.user === loggedInUser.email) mine++;
+                if (item.status === 'Paid') paid++;
                 totalDuty += parseFloat(item.duty || 0);
 
                 tbody.innerHTML += `
                     <tr>
                         <td>${item.date}</td>
-                        <td><small>${item.user}</small></td>
-                        <td>${item.beNo}</td>
-                        <td>${item.duty}</td>
-                        <td style="color:${item.status === 'Paid' ? 'green' : 'red'}">${item.status}</td>
+                        <td><span class="user-tag">${item.user}</span></td>
+                        <td><b>${item.beNo}</b></td>
+                        <td>${parseFloat(item.duty).toLocaleString()}</td>
+                        <td><span class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</span></td>
+                        <td class="no-print">
+                            <button class="btn btn-del" onclick="deleteRecord('${item.beNo}')">Delete</button>
+                        </td>
                     </tr>`;
             }
         });
 
         document.getElementById('countTotal').innerText = data.length;
         document.getElementById('countMine').innerText = mine;
-        document.getElementById('sumDuty').innerText = totalDuty.toFixed(2);
+        document.getElementById('countPaid').innerText = paid;
+        document.getElementById('sumDuty').innerText = totalDuty.toLocaleString();
     }
 
-    document.getElementById('beForm').onsubmit = async (e) => {
+    // ৩. ডাটা সেভ করা
+    document.getElementById('beForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         const payload = {
             date: new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
-            user: userData.email, // জিমেইল আইডি সেভ হবে
+            user: loggedInUser.email,
+            ain: document.getElementById('ain').value,
             beNo: document.getElementById('beNo').value,
             duty: document.getElementById('duty').value,
             status: 'Pending'
         };
-        await fetch(API_URL, {
+
+        const res = await fetch(API_URL, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ data: [payload] })
         });
-        document.getElementById('beForm').reset();
-        fetchRecords();
-    };
+
+        if(res.ok) {
+            document.getElementById('beForm').reset();
+            fetchRecords();
+        }
+    });
+
+    async function deleteRecord(beNo) {
+        if(confirm("Are you sure to delete?")) {
+            await fetch(`${API_URL}/beNo/${beNo}`, { method: 'DELETE' });
+            fetchRecords();
+        }
+    }
 </script>
 </body>
 </html>
