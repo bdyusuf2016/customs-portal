@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customs Pro | Admin Dashboard</title>
+    <title>Customs Pro | Secure User Portal</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
@@ -31,7 +31,7 @@
         th { background: #f1f3f4; color: #5f6368; }
         .status-paid { color: var(--success); font-weight: bold; }
         .status-pending { color: var(--danger); font-weight: bold; }
-        #adminTools { display: none; } /* ডিফল্টভাবে হাইড থাকবে */
+        #adminTools { display: none; }
         @media print { .no-print { display: none !important; } #dashboard { display: block !important; } }
     </style>
 </head>
@@ -81,13 +81,11 @@
         <div class="form-grid">
             <input type="date" id="startDate">
             <input type="date" id="endDate">
-            
             <div id="adminTools">
                 <select id="userFilter" onchange="applyAllFilters()">
                     <option value="all">All Users</option>
                 </select>
             </div>
-
             <div style="display: flex; gap: 5px;">
                 <button class="btn" style="background:var(--dark); color:white; flex:1;" onclick="applyAllFilters()">Apply Filter</button>
                 <button class="btn btn-today" style="flex:1;" onclick="loadTodayData()">Today</button>
@@ -153,9 +151,8 @@
         if(currentUser.email === ADMIN_EMAIL) {
             document.getElementById('adminTools').style.display = 'block';
         }
-
-        fetch(AIN_URL).then(res => res.json()).then(data => ainDatabase = data).catch(e => {});
         loadRecords();
+        fetch(AIN_URL).then(res => res.json()).then(data => ainDatabase = data).catch(e => {});
     }
 
     function logout() {
@@ -173,19 +170,18 @@
         loadTodayData();
     }
 
-    function updateUserDropdown() {
-        const select = document.getElementById('userFilter');
-        const users = [...new Set(allRecords.map(item => item.user))];
-        select.innerHTML = '<option value="all">All Users</option>';
-        users.forEach(user => {
-            select.innerHTML += `<option value="${user}">${user.split('@')[0]}</option>`;
-        });
-    }
-
     function loadTodayData() {
         const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
-        const todayData = allRecords.filter(item => item.date === today);
-        renderTable(todayData);
+        
+        // ফিল্টারিং লজিক: অ্যাডমিন হলে সব আজকের ডাটা, ইউজার হলে শুধু তার আজকের ডাটা
+        const filtered = allRecords.filter(item => {
+            const isToday = item.date === today;
+            const isOwnData = item.user === currentUser.email;
+            const isAdmin = currentUser.email === ADMIN_EMAIL;
+            return isToday && (isAdmin || isOwnData);
+        });
+
+        renderTable(filtered);
         document.getElementById('startDate').value = '';
         document.getElementById('endDate').value = '';
         if(document.getElementById('userFilter')) document.getElementById('userFilter').value = 'all';
@@ -194,16 +190,23 @@
     function applyAllFilters() {
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
-        const selectedUser = document.getElementById('userFilter').value;
+        const isAdmin = (currentUser.email === ADMIN_EMAIL);
         
         let filtered = allRecords;
 
-        // User Filter (Admin Only)
-        if (currentUser.email === ADMIN_EMAIL && selectedUser !== 'all') {
-            filtered = filtered.filter(item => item.user === selectedUser);
+        // ১. ইউজার ভিত্তিক ফিল্টার (সিকিউরিটি লজিক)
+        if (!isAdmin) {
+            // সাধারণ ইউজার শুধুমাত্র তার নিজের ডাটা ফিল্টার করতে পারবে
+            filtered = filtered.filter(item => item.user === currentUser.email);
+        } else {
+            // অ্যাডমিন চাইলে ড্রপডাউন থেকে নির্দিষ্ট ইউজার সিলেক্ট করতে পারে
+            const selectedUser = document.getElementById('userFilter').value;
+            if(selectedUser !== 'all') {
+                filtered = filtered.filter(item => item.user === selectedUser);
+            }
         }
 
-        // Date Filter
+        // ২. তারিখ ভিত্তিক ফিল্টার
         if(start && end) {
             const dStart = new Date(start);
             const dEnd = new Date(end);
@@ -217,46 +220,52 @@
         renderTable(filtered);
     }
 
-    function textFilter() {
-        const q = document.getElementById('searchBox').value.toLowerCase();
-        const filtered = allRecords.filter(r => r.beNo.toLowerCase().includes(q) || r.ain.toLowerCase().includes(q));
-        renderTable(filtered);
-    }
-
     function renderTable(data) {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
         let dSum = 0, cSum = 0, pSum = 0;
-        const isAdmin = (currentUser.email === ADMIN_EMAIL);
 
         data.slice().reverse().forEach(item => {
-            // General user sees only their data, Admin sees according to filter
-            if (isAdmin || item.user === currentUser.email) {
-                dSum += parseFloat(item.duty || 0);
-                cSum += parseFloat(item.cash || 0);
-                pSum += parseFloat(item.profit || 0);
+            dSum += parseFloat(item.duty || 0);
+            cSum += parseFloat(item.cash || 0);
+            pSum += parseFloat(item.profit || 0);
 
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${item.date}</td>
-                        <td><small>${item.user.split('@')[0]}</small></td>
-                        <td style="text-align:left;">${item.name || ''}</td>
-                        <td><b>${item.ain}</b><br>${item.beNo}/${item.beYear}</td>
-                        <td>${parseFloat(item.duty).toFixed(2)}</td>
-                        <td>${parseFloat(item.cash || 0).toFixed(2)}</td>
-                        <td>${parseFloat(item.profit || 0).toFixed(2)}</td>
-                        <td class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</td>
-                        <td class="no-print">
-                            ${item.status === 'Pending' ? `<button class="btn" style="background:var(--primary); color:white; font-size:11px;" onclick="updatePayment('${item.beNo}', ${item.duty})">Pay</button>` : ''}
-                            <button class="btn" style="background:#feeae6; color:var(--danger); font-size:11px;" onclick="deleteRecord('${item.beNo}')">Del</button>
-                        </td>
-                    </tr>`;
-            }
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.date}</td>
+                    <td><small>${item.user.split('@')[0]}</small></td>
+                    <td style="text-align:left;">${item.name || ''}</td>
+                    <td><b>${item.ain}</b><br>${item.beNo}/${item.beYear}</td>
+                    <td>${parseFloat(item.duty).toFixed(2)}</td>
+                    <td>${parseFloat(item.cash || 0).toFixed(2)}</td>
+                    <td>${parseFloat(item.profit || 0).toFixed(2)}</td>
+                    <td class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</td>
+                    <td class="no-print">
+                        ${item.status === 'Pending' ? `<button class="btn" style="background:var(--primary); color:white; font-size:11px;" onclick="updatePayment('${item.beNo}', ${item.duty})">Pay</button>` : ''}
+                        <button class="btn" style="background:#feeae6; color:var(--danger); font-size:11px;" onclick="deleteRecord('${item.beNo}')">Del</button>
+                    </td>
+                </tr>`;
         });
         document.getElementById('statMine').innerText = data.length;
         document.getElementById('statDuty').innerText = dSum.toLocaleString(undefined, {minimumFractionDigits: 2});
         document.getElementById('statCash').innerText = cSum.toLocaleString(undefined, {minimumFractionDigits: 2});
         document.getElementById('statProfit').innerText = pSum.toLocaleString(undefined, {minimumFractionDigits: 2});
+    }
+
+    // ... (বাকি ফাংশনগুলো অপরিবর্তিত থাকবে) ...
+    function updateUserDropdown() {
+        const select = document.getElementById('userFilter');
+        const users = [...new Set(allRecords.map(item => item.user))];
+        select.innerHTML = '<option value="all">All Users</option>';
+        users.forEach(user => {
+            select.innerHTML += `<option value="${user}">${user.split('@')[0]}</option>`;
+        });
+    }
+
+    function textFilter() {
+        const q = document.getElementById('searchBox').value.toLowerCase();
+        const filtered = allRecords.filter(r => (r.user === currentUser.email || currentUser.email === ADMIN_EMAIL) && (r.beNo.toLowerCase().includes(q) || r.ain.toLowerCase().includes(q)));
+        renderTable(filtered);
     }
 
     function handleAINAutoFill() {
