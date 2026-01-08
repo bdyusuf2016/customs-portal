@@ -26,26 +26,12 @@
         .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
         .btn-save { background: var(--success); color: white; width: 100%; }
         .btn-print { background: #34495e; color: white; margin-right: 5px; }
-        .btn-pay { background: var(--primary); color: white; font-size: 11px; margin-right: 5px; }
-        .btn-del { background: #feeae6; color: var(--danger); font-size: 11px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; border: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; }
         th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f1f3f4; color: #5f6368; }
         .status-paid { color: var(--success); font-weight: bold; }
         .status-pending { color: var(--danger); font-weight: bold; }
-
-        /* প্রিন্ট এর জন্য বিশেষ সেটিংস */
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white; padding: 0; }
-            #dashboard { display: block !important; width: 100%; max-width: 100%; padding: 0; }
-            .card { box-shadow: none; border: none; padding: 0; }
-            .stat-card { background: #f8f9fa !important; color: black !important; border: 1px solid #ddd; }
-            .stat-card b { color: black !important; }
-            table { border: 1px solid black; }
-            th { background: #eee !important; color: black !important; border: 1px solid #ccc; }
-            td { border: 1px solid #eee; }
-        }
+        @media print { .no-print { display: none !important; } #dashboard { display: block !important; } }
     </style>
 </head>
 <body>
@@ -66,7 +52,7 @@
         </div>
         <div class="no-print">
             <button class="btn btn-print" onclick="window.print()">Print Report</button>
-            <button class="btn" style="background:#eee;" onclick="location.reload()">Logout</button>
+            <button class="btn" style="background:#eee;" onclick="logout()">Logout</button>
         </div>
     </div>
 
@@ -100,7 +86,7 @@
         </div>
     </div>
 
-    <div class="card" style="padding:0;">
+    <div class="card" style="padding:0; overflow-x: auto;">
         <table id="reportTable">
             <thead>
                 <tr>
@@ -131,19 +117,38 @@
     let allRecords = [];
 
     window.onload = function () {
-        google.accounts.id.initialize({ client_id: CLIENT_ID, callback: onLogin });
-        google.accounts.id.renderButton(document.getElementById("g_id_signin"), { theme: "outline", size: "large", width: "100%" });
+        // ১. আগে চেক করবে লোকাল স্টোরেজে ইউজার আছে কিনা
+        const savedUser = localStorage.getItem('customsUser');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+            showDashboard();
+        } else {
+            google.accounts.id.initialize({ client_id: CLIENT_ID, callback: onLogin });
+            google.accounts.id.renderButton(document.getElementById("g_id_signin"), { theme: "outline", size: "large", width: "100%" });
+        }
     }
 
     async function onLogin(response) {
         currentUser = JSON.parse(atob(response.credential.split('.')[1]));
+        // ২. ইউজার ডাটা লোকাল স্টোরেজে সেভ করা
+        localStorage.setItem('customsUser', JSON.stringify(currentUser));
+        showDashboard();
+    }
+
+    function showDashboard() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         document.getElementById('userName').innerText = currentUser.name;
         document.getElementById('userEmail').innerText = currentUser.email;
         document.getElementById('userImg').src = currentUser.picture;
-        await fetch(AIN_URL).then(res => res.json()).then(data => ainDatabase = data).catch(e => {});
+        
+        fetch(AIN_URL).then(res => res.json()).then(data => ainDatabase = data).catch(e => {});
         loadRecords();
+    }
+
+    function logout() {
+        localStorage.removeItem('customsUser');
+        location.reload();
     }
 
     function handleAINAutoFill() {
@@ -160,7 +165,7 @@
     function applyDateFilter() {
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
-        if(!start || !end) { alert("Select both dates"); return; }
+        if(!start || !end) return;
         const dStart = new Date(start);
         const dEnd = new Date(end);
         const filtered = allRecords.filter(item => {
@@ -200,16 +205,16 @@
                         <td>${parseFloat(item.profit || 0).toFixed(2)}</td>
                         <td class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</td>
                         <td class="no-print">
-                            ${item.status === 'Pending' ? `<button class="btn btn-pay" onclick="updatePayment('${item.beNo}', ${item.duty})">Pay</button>` : ''}
-                            <button class="btn btn-del" onclick="deleteRecord('${item.beNo}')">Del</button>
+                            ${item.status === 'Pending' ? `<button class="btn" style="background:var(--primary); color:white; font-size:11px;" onclick="updatePayment('${item.beNo}', ${item.duty})">Pay</button>` : ''}
+                            <button class="btn" style="background:#feeae6; color:var(--danger); font-size:11px;" onclick="deleteRecord('${item.beNo}')">Del</button>
                         </td>
                     </tr>`;
             }
         });
         document.getElementById('statMine').innerText = data.length;
-        document.getElementById('statDuty').innerText = dSum.toFixed(2);
-        document.getElementById('statCash').innerText = cSum.toFixed(2);
-        document.getElementById('statProfit').innerText = pSum.toFixed(2);
+        document.getElementById('statDuty').innerText = dSum.toLocaleString();
+        document.getElementById('statCash').innerText = cSum.toLocaleString();
+        document.getElementById('statProfit').innerText = pSum.toLocaleString();
     }
 
     document.getElementById('beForm').onsubmit = async (e) => {
