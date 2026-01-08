@@ -11,28 +11,41 @@
             --dark: #2c3e50; --card-shadow: 0 1px 3px rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
         }
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg); margin: 0; padding-bottom: 50px; }
+        
+        /* Login Screen */
         #loginScreen { height: 100vh; display: flex; justify-content: center; align-items: center; background: #fff; }
         .login-card { padding: 40px; border-radius: 16px; box-shadow: var(--card-shadow); text-align: center; width: 320px; }
+        
+        /* Dashboard Layout */
         #dashboard { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .user-profile { display: flex; align-items: center; gap: 10px; }
         .user-profile img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary); }
+
+        /* Stats Cards */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .stat-card { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; }
         .stat-card b { font-size: 20px; color: #ffc107; display: block; }
+        .stat-label { font-size: 11px; text-transform: uppercase; color: #adb5bd; }
+
+        /* Form & Cards */
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
         input, select { padding: 10px; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
-        .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        
+        .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
         .btn-save { background: var(--success); color: white; width: 100%; }
         .btn-pay { background: var(--primary); color: white; font-size: 11px; margin-right: 5px; }
         .btn-del { background: #feeae6; color: var(--danger); font-size: 11px; }
+
+        /* Table Styling */
         .table-container { overflow-x: auto; background: white; border-radius: 12px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f1f3f4; color: #5f6368; }
         .status-paid { color: var(--success); font-weight: bold; }
         .status-pending { color: var(--danger); font-weight: bold; }
+
         @media print { .no-print { display: none !important; } #dashboard { display: block !important; padding: 0; } }
     </style>
 </head>
@@ -42,34 +55,49 @@
     <div class="login-card">
         <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="48">
         <h2>Customs Portal</h2>
+        <p style="color:#666; font-size:14px;">Log in to manage your B/E data</p>
         <div id="g_id_signin"></div>
     </div>
 </div>
 
 <div id="dashboard">
     <div class="header no-print">
-        <div class="user-profile"><img id="userImg" src=""><div><b id="userName"></b><br><small id="userEmail"></small></div></div>
-        <button class="btn" style="background:#eee;" onclick="location.reload()">Logout</button>
+        <div class="user-profile">
+            <img id="userImg" src="">
+            <div><b id="userName"></b><br><small id="userEmail"></small></div>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn" style="background:#eee;" onclick="window.print()">Print Report</button>
+            <button class="btn" style="background:#fce8e6; color:var(--danger);" onclick="location.reload()">Logout</button>
+        </div>
     </div>
 
     <div class="stats-grid">
-        <div class="stat-card">My Entries <b id="statMine">0</b></div>
-        <div class="stat-card">Total Duty <b id="statDuty">0</b></div>
-        <div class="stat-card">Cash Rec. <b id="statCash">0</b></div>
-        <div class="stat-card">Net Profit <b id="statProfit">0</b></div>
+        <div class="stat-card"><span class="stat-label">Total Entries</span><b id="statMine">0</b></div>
+        <div class="stat-card"><span class="stat-label">Total Duty</span><b id="statDuty">0.00</b></div>
+        <div class="stat-card"><span class="stat-label">Cash Received</span><b id="statCash">0.00</b></div>
+        <div class="stat-card"><span class="stat-label">Net Profit</span><b id="statProfit">0.00</b></div>
     </div>
 
     <div class="card no-print">
+        <h4 style="margin:0 0 15px 0;">Add New Record</h4>
         <form id="beForm" class="form-grid">
-            <input type="text" id="ain" placeholder="AIN No" oninput="handleAINAutoFill()" required>
+            <input type="text" id="ain" placeholder="AIN Number" oninput="handleAINAutoFill()" required>
             <input type="text" id="declarant" placeholder="Declarant Name" readonly style="background:#f1f3f4;">
-            <input type="text" id="beNo" placeholder="B/E No" required>
-            <input type="text" id="beYear" placeholder="Year" required>
-            <input type="number" id="duty" placeholder="Duty Amt" step="any" required>
+            <input type="text" id="beNo" placeholder="B/E Number" required>
+            <input type="text" id="beYear" placeholder="B/E Year" required>
+            <input type="number" id="duty" placeholder="Duty Amount" step="any" required>
             <input type="number" id="cashReceived" placeholder="Cash Rec. (Optional)" step="any">
-            <select id="method"><option value="Cash">Cash</option><option value="Bank">Bank</option></select>
+            <select id="method">
+                <option value="Cash">Cash</option>
+                <option value="Bank">Bank</option>
+            </select>
             <button type="submit" class="btn btn-save">Save Record</button>
         </form>
+    </div>
+
+    <div class="card no-print" style="padding:10px;">
+        <input type="text" id="searchBox" placeholder="Quick Search B/E, AIN or Declarant..." onkeyup="filterTable()">
     </div>
 
     <div class="table-container card">
@@ -79,9 +107,9 @@
                     <th>Date</th>
                     <th>User</th>
                     <th>Declarant Name</th>
-                    <th>B/E Info (AIN+No)</th>
+                    <th>B/E Info (AIN + No)</th>
                     <th>Duty</th>
-                    <th>Cash</th>
+                    <th>Cash Rec.</th>
                     <th>Profit</th>
                     <th>Status</th>
                     <th class="no-print">Action</th>
@@ -96,9 +124,11 @@
     const CLIENT_ID = "892484000034-a40kgtia2ne0j8g9j42g8jspvou957i7.apps.googleusercontent.com";
     const API_URL = "https://sheetdb.io/api/v1/vont79v8eejj0";
     const AIN_URL = API_URL + "?sheet=AIN_List";
+    const ADMIN_EMAIL = "mdyusufcbc@gmail.com"; 
 
     let currentUser = null;
     let ainDatabase = [];
+    let allRecords = [];
 
     window.onload = function () {
         google.accounts.id.initialize({ client_id: CLIENT_ID, callback: onLogin });
@@ -113,24 +143,37 @@
         document.getElementById('userEmail').innerText = currentUser.email;
         document.getElementById('userImg').src = currentUser.picture;
         
-        await fetch(AIN_URL).then(res => res.json()).then(data => ainDatabase = data).catch(e => console.log("AIN Fail"));
+        await fetch(AIN_URL).then(res => res.json()).then(data => ainDatabase = data).catch(e => console.log("AIN DB Load Fail"));
         loadRecords();
     }
 
     function handleAINAutoFill() {
-        const found = ainDatabase.find(item => String(item.ain).trim() === document.getElementById('ain').value.trim());
-        document.getElementById('declarant').value = found ? found.name : "Not Found";
+        const input = document.getElementById('ain').value.trim();
+        const found = ainDatabase.find(item => String(item.ain).trim() === input);
+        const nameField = document.getElementById('declarant');
+        if(found) {
+            nameField.value = found.name;
+            nameField.style.color = "green";
+        } else {
+            nameField.value = "Not Found";
+            nameField.style.color = "red";
+        }
     }
 
     async function loadRecords() {
         const res = await fetch(API_URL);
-        const data = await res.json();
+        allRecords = await res.json();
+        renderTable(allRecords);
+    }
+
+    function renderTable(data) {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
         let dSum = 0, cSum = 0, pSum = 0, mCount = 0;
+        const isAdmin = (currentUser.email === ADMIN_EMAIL);
 
         data.slice().reverse().forEach(item => {
-            if (item.user === currentUser.email || currentUser.email === "mdyusufcbc@gmail.com") {
+            if (item.user === currentUser.email || isAdmin) {
                 if(item.user === currentUser.email) mCount++;
                 dSum += parseFloat(item.duty || 0);
                 cSum += parseFloat(item.cash || 0);
@@ -153,17 +196,27 @@
                     </tr>`;
             }
         });
-        document.getElementById('statMine').innerText = mCount;
+        document.getElementById('statMine').innerText = isAdmin ? data.length : mCount;
         document.getElementById('statDuty').innerText = dSum.toFixed(2);
         document.getElementById('statCash').innerText = cSum.toFixed(2);
         document.getElementById('statProfit').innerText = pSum.toFixed(2);
     }
 
+    function filterTable() {
+        const query = document.getElementById('searchBox').value.toLowerCase();
+        const filtered = allRecords.filter(r => 
+            r.beNo.toLowerCase().includes(query) || 
+            r.ain.toLowerCase().includes(query) ||
+            (r.name && r.name.toLowerCase().includes(query))
+        );
+        renderTable(filtered);
+    }
+
     document.getElementById('beForm').onsubmit = async (e) => {
         e.preventDefault();
         const duty = parseFloat(document.getElementById('duty').value);
-        const cashInput = document.getElementById('cashReceived').value;
-        const cash = cashInput ? parseFloat(cashInput) : 0;
+        const cashIn = document.getElementById('cashReceived').value;
+        const cash = cashIn ? parseFloat(cashIn) : 0;
         const profit = cash > 0 ? (cash - duty).toFixed(2) : 0;
         const status = cash > 0 ? 'Paid' : 'Pending';
 
@@ -174,23 +227,30 @@
             beYear: document.getElementById('beYear').value, duty: duty,
             method: document.getElementById('method').value, status: status, cash: cash, profit: profit
         };
-        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [payload] }) });
+        
+        await fetch(API_URL, { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify({ data: [payload] }) 
+        });
         document.getElementById('beForm').reset();
         loadRecords();
     };
 
     async function updatePayment(beNo, duty) {
-        const cash = prompt("Cash Received:");
+        const cash = prompt("Enter Cash Received Amount:");
         if (!cash) return;
         const profit = (parseFloat(cash) - parseFloat(duty)).toFixed(2);
-        await fetch(`${API_URL}/beNo/${beNo}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, 
+        await fetch(`${API_URL}/beNo/${beNo}`, { 
+            method: 'PATCH', 
+            headers: {'Content-Type': 'application/json'}, 
             body: JSON.stringify({ status: 'Paid', cash: cash, profit: profit }) 
         });
         loadRecords();
     }
 
     async function deleteRecord(id) {
-        if(confirm("Delete B/E: " + id + "?")) {
+        if(confirm("Confirm deletion of B/E: " + id + "?")) {
             await fetch(`${API_URL}/beNo/${id}`, { method: 'DELETE' });
             loadRecords();
         }
