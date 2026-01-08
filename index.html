@@ -25,15 +25,27 @@
         input, select { padding: 10px; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
         .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
         .btn-save { background: var(--success); color: white; width: 100%; }
-        .btn-filter { background: var(--dark); color: white; }
+        .btn-print { background: #34495e; color: white; margin-right: 5px; }
         .btn-pay { background: var(--primary); color: white; font-size: 11px; margin-right: 5px; }
         .btn-del { background: #feeae6; color: var(--danger); font-size: 11px; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; }
-        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; border: 1px solid #eee; }
+        th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f1f3f4; color: #5f6368; }
         .status-paid { color: var(--success); font-weight: bold; }
         .status-pending { color: var(--danger); font-weight: bold; }
-        @media print { .no-print { display: none !important; } #dashboard { display: block !important; } }
+
+        /* প্রিন্ট এর জন্য বিশেষ সেটিংস */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 0; }
+            #dashboard { display: block !important; width: 100%; max-width: 100%; padding: 0; }
+            .card { box-shadow: none; border: none; padding: 0; }
+            .stat-card { background: #f8f9fa !important; color: black !important; border: 1px solid #ddd; }
+            .stat-card b { color: black !important; }
+            table { border: 1px solid black; }
+            th { background: #eee !important; color: black !important; border: 1px solid #ccc; }
+            td { border: 1px solid #eee; }
+        }
     </style>
 </head>
 <body>
@@ -47,15 +59,21 @@
 </div>
 
 <div id="dashboard">
-    <div class="header no-print">
-        <div class="user-profile"><img id="userImg" src=""><div><b id="userName"></b><br><small id="userEmail"></small></div></div>
-        <button class="btn" style="background:#eee;" onclick="location.reload()">Logout</button>
+    <div class="header">
+        <div class="user-profile">
+            <img id="userImg" src="">
+            <div><b id="userName"></b><br><small id="userEmail"></small></div>
+        </div>
+        <div class="no-print">
+            <button class="btn btn-print" onclick="window.print()">Print Report</button>
+            <button class="btn" style="background:#eee;" onclick="location.reload()">Logout</button>
+        </div>
     </div>
 
     <div class="stats-grid">
-        <div class="stat-card">Entries <b id="statMine">0</b></div>
+        <div class="stat-card">Total Records <b id="statMine">0</b></div>
         <div class="stat-card">Total Duty <b id="statDuty">0.00</b></div>
-        <div class="stat-card">Cash Rec. <b id="statCash">0.00</b></div>
+        <div class="stat-card">Cash Received <b id="statCash">0.00</b></div>
         <div class="stat-card">Net Profit <b id="statProfit">0.00</b></div>
     </div>
 
@@ -68,32 +86,22 @@
             <input type="number" id="duty" placeholder="Duty Amt" step="any" required>
             <input type="number" id="cashReceived" placeholder="Cash Rec." step="any">
             <select id="method"><option value="Cash">Cash</option><option value="Bank">Bank</option></select>
-            <button type="submit" class="btn btn-save">Save</button>
+            <button type="submit" class="btn btn-save">Save Record</button>
         </form>
     </div>
 
     <div class="card no-print">
         <div class="form-grid">
-            <div>
-                <label style="font-size:12px;">Start Date:</label>
-                <input type="date" id="startDate">
-            </div>
-            <div>
-                <label style="font-size:12px;">End Date:</label>
-                <input type="date" id="endDate">
-            </div>
-            <div style="display:flex; align-items:flex-end;">
-                <button class="btn btn-filter" onclick="applyDateFilter()">Apply Filter</button>
-                <button class="btn" style="margin-left:5px;" onclick="loadRecords()">Reset</button>
-            </div>
-            <div style="display:flex; align-items:flex-end;">
-                <input type="text" id="searchBox" placeholder="Search B/E or AIN..." onkeyup="textFilter()">
-            </div>
+            <input type="date" id="startDate">
+            <input type="date" id="endDate">
+            <button class="btn" style="background:var(--dark); color:white;" onclick="applyDateFilter()">Apply Filter</button>
+            <button class="btn" onclick="loadRecords()">Reset</button>
+            <input type="text" id="searchBox" placeholder="Search B/E or AIN..." onkeyup="textFilter()">
         </div>
     </div>
 
-    <div class="card" style="overflow-x:auto; padding:0;">
-        <table>
+    <div class="card" style="padding:0;">
+        <table id="reportTable">
             <thead>
                 <tr>
                     <th>Date</th>
@@ -149,21 +157,15 @@
         renderTable(allRecords);
     }
 
-    function parseDate(str) {
-        const [d, m, y] = str.split('-');
-        return new Date(y, m - 1, d);
-    }
-
     function applyDateFilter() {
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
         if(!start || !end) { alert("Select both dates"); return; }
-        
         const dStart = new Date(start);
         const dEnd = new Date(end);
-        
         const filtered = allRecords.filter(item => {
-            const itemDate = parseDate(item.date);
+            const [d, m, y] = item.date.split('-');
+            const itemDate = new Date(y, m - 1, d);
             return itemDate >= dStart && itemDate <= dEnd;
         });
         renderTable(filtered);
@@ -178,12 +180,11 @@
     function renderTable(data) {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
-        let dSum = 0, cSum = 0, pSum = 0, mCount = 0;
+        let dSum = 0, cSum = 0, pSum = 0;
         const isAdmin = (currentUser.email === ADMIN_EMAIL);
 
         data.slice().reverse().forEach(item => {
             if (item.user === currentUser.email || isAdmin) {
-                if(item.user === currentUser.email) mCount++;
                 dSum += parseFloat(item.duty || 0);
                 cSum += parseFloat(item.cash || 0);
                 pSum += parseFloat(item.profit || 0);
@@ -193,10 +194,10 @@
                         <td>${item.date}</td>
                         <td><small>${item.user.split('@')[0]}</small></td>
                         <td style="text-align:left;">${item.name || ''}</td>
-                        <td><span style="color:#1a73e8; font-weight:bold;">${item.ain}</span><br><b>${item.beNo}/${item.beYear}</b></td>
+                        <td><b>${item.ain}</b><br>${item.beNo}/${item.beYear}</td>
                         <td>${parseFloat(item.duty).toFixed(2)}</td>
                         <td>${parseFloat(item.cash || 0).toFixed(2)}</td>
-                        <td style="color:green; font-weight:bold;">${parseFloat(item.profit || 0).toFixed(2)}</td>
+                        <td>${parseFloat(item.profit || 0).toFixed(2)}</td>
                         <td class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</td>
                         <td class="no-print">
                             ${item.status === 'Pending' ? `<button class="btn btn-pay" onclick="updatePayment('${item.beNo}', ${item.duty})">Pay</button>` : ''}
@@ -205,7 +206,7 @@
                     </tr>`;
             }
         });
-        document.getElementById('statMine').innerText = isAdmin ? data.length : mCount;
+        document.getElementById('statMine').innerText = data.length;
         document.getElementById('statDuty').innerText = dSum.toFixed(2);
         document.getElementById('statCash').innerText = cSum.toFixed(2);
         document.getElementById('statProfit').innerText = pSum.toFixed(2);
@@ -216,15 +217,13 @@
         const duty = parseFloat(document.getElementById('duty').value);
         const cashIn = document.getElementById('cashReceived').value;
         const cash = cashIn ? parseFloat(cashIn) : 0;
-        const profit = cash > 0 ? (cash - duty).toFixed(2) : 0;
-        const status = cash > 0 ? 'Paid' : 'Pending';
-
         const payload = {
             date: new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
             user: currentUser.email, ain: document.getElementById('ain').value,
             name: document.getElementById('declarant').value, beNo: document.getElementById('beNo').value,
             beYear: document.getElementById('beYear').value, duty: duty,
-            method: document.getElementById('method').value, status: status, cash: cash, profit: profit
+            method: document.getElementById('method').value, status: cash > 0 ? 'Paid' : 'Pending', 
+            cash: cash, profit: cash > 0 ? (cash - duty).toFixed(2) : 0
         };
         await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [payload] }) });
         document.getElementById('beForm').reset();
