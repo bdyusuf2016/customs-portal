@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customs Pro | Financial Portal</title>
+    <title>Customs Pro | Daily Dashboard</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
@@ -25,7 +25,6 @@
         input, select { padding: 10px; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
         .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
         .btn-save { background: var(--success); color: white; width: 100%; }
-        .btn-print { background: #34495e; color: white; margin-right: 5px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; }
         th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f1f3f4; color: #5f6368; }
@@ -51,14 +50,14 @@
             <div><b id="userName"></b><br><small id="userEmail"></small></div>
         </div>
         <div class="no-print">
-            <button class="btn btn-print" onclick="window.print()">Print Report</button>
+            <button class="btn" style="background: #34495e; color:white; margin-right:5px;" onclick="window.print()">Print Report</button>
             <button class="btn" style="background:#eee;" onclick="logout()">Logout</button>
         </div>
     </div>
 
     <div class="stats-grid">
-        <div class="stat-card">Total Records <b id="statMine">0</b></div>
-        <div class="stat-card">Total Duty <b id="statDuty">0.00</b></div>
+        <div class="stat-card">Today's Entries <b id="statMine">0</b></div>
+        <div class="stat-card">Today's Duty <b id="statDuty">0.00</b></div>
         <div class="stat-card">Cash Received <b id="statCash">0.00</b></div>
         <div class="stat-card">Net Profit <b id="statProfit">0.00</b></div>
     </div>
@@ -81,7 +80,7 @@
             <input type="date" id="startDate">
             <input type="date" id="endDate">
             <button class="btn" style="background:var(--dark); color:white;" onclick="applyDateFilter()">Apply Filter</button>
-            <button class="btn" onclick="loadRecords()">Reset</button>
+            <button class="btn" onclick="loadRecords()">Today's Data</button>
             <input type="text" id="searchBox" placeholder="Search B/E or AIN..." onkeyup="textFilter()">
         </div>
     </div>
@@ -93,7 +92,7 @@
                     <th>Date</th>
                     <th>User</th>
                     <th>Declarant Name</th>
-                    <th>B/E Info (AIN+No)</th>
+                    <th>B/E Info</th>
                     <th>Duty</th>
                     <th>Cash</th>
                     <th>Profit</th>
@@ -117,7 +116,6 @@
     let allRecords = [];
 
     window.onload = function () {
-        // ১. আগে চেক করবে লোকাল স্টোরেজে ইউজার আছে কিনা
         const savedUser = localStorage.getItem('customsUser');
         if (savedUser) {
             currentUser = JSON.parse(savedUser);
@@ -130,7 +128,6 @@
 
     async function onLogin(response) {
         currentUser = JSON.parse(atob(response.credential.split('.')[1]));
-        // ২. ইউজার ডাটা লোকাল স্টোরেজে সেভ করা
         localStorage.setItem('customsUser', JSON.stringify(currentUser));
         showDashboard();
     }
@@ -141,7 +138,6 @@
         document.getElementById('userName').innerText = currentUser.name;
         document.getElementById('userEmail').innerText = currentUser.email;
         document.getElementById('userImg').src = currentUser.picture;
-        
         fetch(AIN_URL).then(res => res.json()).then(data => ainDatabase = data).catch(e => {});
         loadRecords();
     }
@@ -151,15 +147,15 @@
         location.reload();
     }
 
-    function handleAINAutoFill() {
-        const found = ainDatabase.find(item => String(item.ain).trim() === document.getElementById('ain').value.trim());
-        document.getElementById('declarant').value = found ? found.name : "Not Found";
-    }
-
     async function loadRecords() {
         const res = await fetch(API_URL);
         allRecords = await res.json();
-        renderTable(allRecords);
+        
+        // হোমপেজে শুধু আজকের ডাটা ফিল্টার করার লজিক
+        const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+        const todayData = allRecords.filter(item => item.date === today);
+        
+        renderTable(todayData);
     }
 
     function applyDateFilter() {
@@ -217,6 +213,11 @@
         document.getElementById('statProfit').innerText = pSum.toLocaleString();
     }
 
+    function handleAINAutoFill() {
+        const found = ainDatabase.find(item => String(item.ain).trim() === document.getElementById('ain').value.trim());
+        document.getElementById('declarant').value = found ? found.name : "Not Found";
+    }
+
     document.getElementById('beForm').onsubmit = async (e) => {
         e.preventDefault();
         const duty = parseFloat(document.getElementById('duty').value);
@@ -232,7 +233,7 @@
         };
         await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [payload] }) });
         document.getElementById('beForm').reset();
-        loadRecords();
+        loadRecords(); // সেভ করার পর অটো আজকের ডাটা রিলোড হবে
     };
 
     async function updatePayment(beNo, duty) {
