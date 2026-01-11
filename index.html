@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customs Pro | Bulk Payment Fixed</title>
+    <title>Customs Pro | Payment Method View</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
@@ -32,6 +32,7 @@
         th { background: #f1f3f4; color: #5f6368; }
         .status-paid { color: var(--success); font-weight: bold; }
         .status-pending { color: var(--danger); font-weight: bold; }
+        .badge-method { background: #e8f0fe; color: #1a73e8; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
         @media print { .no-print { display: none !important; } #dashboard { display: block !important; } }
     </style>
 </head>
@@ -106,7 +107,7 @@
                     <th>Duty</th>
                     <th>Cash</th>
                     <th>Profit</th>
-                    <th>Status</th>
+                    <th>Method</th> <th>Status</th>
                     <th class="no-print">Action</th>
                 </tr>
             </thead>
@@ -161,19 +162,6 @@
         loadTodayData();
     }
 
-    function updateUserDropdown() {
-        const select = document.getElementById('userFilter');
-        const users = [...new Set(allRecords.map(item => item.user))];
-        select.innerHTML = '<option value="all">All Users</option>';
-        users.forEach(user => select.innerHTML += `<option value="${user}">${user.split('@')[0]}</option>`);
-    }
-
-    function loadTodayData() {
-        const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
-        const filtered = allRecords.filter(item => item.date === today && (currentUser.email === ADMIN_EMAIL || item.user === currentUser.email));
-        renderTable(filtered);
-    }
-
     function renderTable(data) {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
@@ -196,7 +184,7 @@
                     <td>${parseFloat(item.duty).toFixed(2)}</td>
                     <td>${parseFloat(item.cash || 0).toFixed(2)}</td>
                     <td>${parseFloat(item.profit || 0).toFixed(2)}</td>
-                    <td class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</td>
+                    <td><span class="badge-method">${item.method || '-'}</span></td> <td class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</td>
                     <td class="no-print">
                         ${item.status === 'Pending' ? `<button class="btn" style="background:var(--primary); color:white; font-size:11px;" onclick="updatePayment('${item.beNo}', ${item.duty})">Pay</button>` : ''}
                         <button class="btn" style="background:#feeae6; color:var(--danger); font-size:11px;" onclick="deleteRecord('${item.beNo}')">Del</button>
@@ -211,22 +199,6 @@
     }
 
     // --- Bulk Payment Logic ---
-    function toggleSelectAll() {
-        const master = document.getElementById('selectAll');
-        document.querySelectorAll('.row-check').forEach(c => c.checked = master.checked);
-        updateSelectionSummary();
-    }
-
-    function updateSelectionSummary() {
-        const selected = document.querySelectorAll('.row-check:checked');
-        totalSelectedDuty = 0;
-        selected.forEach(s => totalSelectedDuty += parseFloat(s.dataset.duty));
-        
-        document.getElementById('selectedDutyTotal').innerText = totalSelectedDuty.toFixed(2);
-        document.getElementById('selectionSummary').style.display = selected.length > 0 ? 'block' : 'none';
-        document.getElementById('bulkPayBtn').style.display = selected.length > 0 ? 'inline-block' : 'none';
-    }
-
     async function processBulkPayment() {
         const selected = document.querySelectorAll('.row-check:checked');
         if(!confirm(`Pay for ${selected.length} items? \nTotal Duty: ${totalSelectedDuty.toFixed(2)}`)) return;
@@ -241,7 +213,6 @@
         const totalProfit = totalCash - totalSelectedDuty;
         const profitPerItem = totalProfit / selected.length;
 
-        // বাটন ডিজেবল করে দেয়া যাতে মাল্টিপল ক্লিক না হয়
         document.getElementById('bulkPayBtn').disabled = true;
         document.getElementById('bulkPayBtn').innerText = "Processing...";
 
@@ -261,14 +232,39 @@
                 })
             });
         }
-
         alert("Bulk Payment Success!");
         document.getElementById('bulkPayBtn').disabled = false;
         document.getElementById('bulkPayBtn').innerText = "Pay Selected";
         loadRecords();
     }
 
-    // --- Others ---
+    // --- অন্যান্য ফাংশন আগের মতোই থাকবে ---
+    function toggleSelectAll() {
+        document.querySelectorAll('.row-check').forEach(c => c.checked = document.getElementById('selectAll').checked);
+        updateSelectionSummary();
+    }
+
+    function updateSelectionSummary() {
+        const selected = document.querySelectorAll('.row-check:checked');
+        totalSelectedDuty = 0;
+        selected.forEach(s => totalSelectedDuty += parseFloat(s.dataset.duty));
+        document.getElementById('selectedDutyTotal').innerText = totalSelectedDuty.toFixed(2);
+        document.getElementById('selectionSummary').style.display = selected.length > 0 ? 'block' : 'none';
+        document.getElementById('bulkPayBtn').style.display = selected.length > 0 ? 'inline-block' : 'none';
+    }
+
+    function loadTodayData() {
+        const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+        renderTable(allRecords.filter(item => item.date === today && (currentUser.email === ADMIN_EMAIL || item.user === currentUser.email)));
+    }
+
+    function updateUserDropdown() {
+        const select = document.getElementById('userFilter');
+        const users = [...new Set(allRecords.map(item => item.user))];
+        select.innerHTML = '<option value="all">All Users</option>';
+        users.forEach(user => select.innerHTML += `<option value="${user}">${user.split('@')[0]}</option>`);
+    }
+
     function applyAllFilters() {
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
@@ -290,8 +286,7 @@
 
     function textFilter() {
         const q = document.getElementById('searchBox').value.toLowerCase();
-        const filtered = allRecords.filter(r => (currentUser.email === ADMIN_EMAIL || r.user === currentUser.email) && (r.beNo.toLowerCase().includes(q) || r.ain.toLowerCase().includes(q)));
-        renderTable(filtered);
+        renderTable(allRecords.filter(r => (currentUser.email === ADMIN_EMAIL || r.user === currentUser.email) && (r.beNo.toLowerCase().includes(q) || r.ain.toLowerCase().includes(q))));
     }
 
     function handleAINAutoFill() {
