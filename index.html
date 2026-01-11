@@ -228,31 +228,51 @@
         document.getElementById('bulkPayBtn').style.display = selected.length > 0 ? 'inline-block' : 'none';
     }
 
-    async function processBulkPayment() {
+   async function processBulkPayment() {
         const selected = document.querySelectorAll('.row-check:checked');
         const count = selected.length;
-        const totalDuty = document.getElementById('selectedDutyTotal').innerText;
+        
+        // বর্তমান সিলেকশনের মোট ডিউটি কত তা বের করা
+        let currentSelectedDuty = 0;
+        selected.forEach(s => currentSelectedDuty += parseFloat(s.dataset.duty));
 
-        if(!confirm(`Proceed to pay for ${count} items? \nTotal Duty: ${totalDuty}`)) return;
+        if(!confirm(`Proceed to pay for ${count} items? \nTotal Duty: ${currentSelectedDuty.toFixed(2)}`)) return;
 
-        const method = prompt("Select Payment Method (Type: Cash or Bank):", "Cash");
+        const method = prompt("Select Payment Method (Cash/Bank):", "Cash");
         if (!method) return;
 
-        const cashPerItem = prompt(`Total Duty is ${totalDuty}. \nEnter actual Cash Received for EACH item (Leave blank for same as duty):`);
+        const totalCashReceived = prompt(`Total Duty is ${currentSelectedDuty.toFixed(2)}. \nEnter Total Cash Received for these ${count} items:`, currentSelectedDuty.toFixed(2));
         
+        if (totalCashReceived === null) return;
+
+        const totalCash = parseFloat(totalCashReceived);
+        
+        // আমরা প্রফিট বের করব: (মোট প্রাপ্ত টাকা - মোট ডিউটি)
+        // এই প্রফিটটি আমরা আইটেমগুলোর মধ্যে ভাগ করে দিব অথবা প্রথম আইটেমে সেট করব। 
+        // সহজ করার জন্য আমরা প্রতিটি আইটেমে (Cash = Duty) ধরব এবং অতিরিক্ত টাকাটা প্রফিট হিসেবে ভাগ করে দিব।
+        
+        const extraProfit = totalCash - currentSelectedDuty;
+        const profitPerItem = extraProfit / count;
+
         for (let check of selected) {
             const beNo = check.dataset.beno;
             const duty = parseFloat(check.dataset.duty);
-            const cashVal = cashPerItem ? parseFloat(cashPerItem) : duty;
-            const profit = (cashVal - duty).toFixed(2);
+            
+            // প্রতিটি আইটেমের ক্যাশ হবে তার ডিউটি + তার ভাগের প্রফিট
+            const finalCashForItem = duty + profitPerItem;
 
             await fetch(`${API_URL}/beNo/${beNo}`, {
                 method: 'PATCH',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ status: 'Paid', cash: cashVal, profit: profit, method: method })
+                body: JSON.stringify({ 
+                    status: 'Paid', 
+                    cash: finalCashForItem.toFixed(2), 
+                    profit: profitPerItem.toFixed(2), 
+                    method: method 
+                })
             });
         }
-        alert("Success! All selected records updated.");
+        alert("Bulk Payment Successful!");
         loadRecords();
     }
 
@@ -327,3 +347,4 @@
 </script>
 </body>
 </html>
+
