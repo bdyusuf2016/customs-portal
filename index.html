@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customs Pro | Bulk Payment & Method</title>
+    <title>Customs Pro | Bulk Payment Fixed</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
@@ -26,7 +26,7 @@
         .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
         .btn-save { background: var(--success); color: white; width: 100%; }
         .btn-bulk-pay { background: #ff9800; color: white; display: none; }
-        #selectionSummary { display: none; background: #fff3e0; padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; border: 1px solid #ffe0b2; margin-right: 10px; }
+        #selectionSummary { display: none; background: #fff3e0; padding: 8px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; border: 1px solid #ffe0b2; margin-right: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; }
         th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f1f3f4; color: #5f6368; }
@@ -52,7 +52,7 @@
             <div><b id="userName"></b><br><small id="userEmail"></small></div>
         </div>
         <div class="no-print" style="display:flex; align-items:center;">
-            <div id="selectionSummary">Selected Duty: <span id="selectedDutyTotal">0.00</span></div>
+            <div id="selectionSummary">Sel. Duty: <span id="selectedDutyTotal">0.00</span></div>
             <button id="bulkPayBtn" class="btn btn-bulk-pay" onclick="processBulkPayment()">Pay Selected</button>
             <button class="btn" style="background: #34495e; color:white; margin: 0 5px;" onclick="window.print()">Print</button>
             <button class="btn" style="background:#eee;" onclick="logout()">Logout</button>
@@ -73,7 +73,7 @@
             <input type="text" id="beNo" placeholder="B/E No" required>
             <input type="text" id="beYear" placeholder="Year" required>
             <input type="number" id="duty" placeholder="Duty Amt" step="any" required>
-            <input type="number" id="cashReceived" placeholder="Cash Rec." step="any">
+            <input type="number" id="cashReceived" placeholder="Cash Rec. (Optional)" step="any">
             <select id="method"><option value="Cash">Cash</option><option value="Bank">Bank</option></select>
             <button type="submit" class="btn btn-save">Save Record</button>
         </form>
@@ -84,15 +84,13 @@
             <input type="date" id="startDate">
             <input type="date" id="endDate">
             <div id="adminTools" style="display:none;">
-                <select id="userFilter" onchange="applyAllFilters()">
-                    <option value="all">All Users</option>
-                </select>
+                <select id="userFilter" onchange="applyAllFilters()"></select>
             </div>
             <div style="display: flex; gap: 5px;">
-                <button class="btn" style="background:var(--dark); color:white; flex:1;" onclick="applyAllFilters()">Apply Filter</button>
+                <button class="btn" style="background:var(--dark); color:white; flex:1;" onclick="applyAllFilters()">Apply</button>
                 <button class="btn" style="background:#607d8b; color:white; flex:1;" onclick="loadTodayData()">Today</button>
             </div>
-            <input type="text" id="searchBox" placeholder="Search B/E or AIN..." onkeyup="textFilter()">
+            <input type="text" id="searchBox" placeholder="Search..." onkeyup="textFilter()">
         </div>
     </div>
 
@@ -126,6 +124,7 @@
     let currentUser = null;
     let ainDatabase = [];
     let allRecords = [];
+    let totalSelectedDuty = 0;
 
     window.onload = function () {
         const savedUser = localStorage.getItem('customsUser');
@@ -208,10 +207,10 @@
         document.getElementById('statDuty').innerText = dSum.toLocaleString();
         document.getElementById('statCash').innerText = cSum.toLocaleString();
         document.getElementById('statProfit').innerText = pSum.toLocaleString();
-        updateSelectionSummary(); // রিসেট সামারি
+        updateSelectionSummary();
     }
 
-    // --- Bulk Payment Functions ---
+    // --- Bulk Payment Logic ---
     function toggleSelectAll() {
         const master = document.getElementById('selectAll');
         document.querySelectorAll('.row-check').forEach(c => c.checked = master.checked);
@@ -220,68 +219,60 @@
 
     function updateSelectionSummary() {
         const selected = document.querySelectorAll('.row-check:checked');
-        let total = 0;
-        selected.forEach(s => total += parseFloat(s.dataset.duty));
+        totalSelectedDuty = 0;
+        selected.forEach(s => totalSelectedDuty += parseFloat(s.dataset.duty));
         
-        document.getElementById('selectedDutyTotal').innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('selectedDutyTotal').innerText = totalSelectedDuty.toFixed(2);
         document.getElementById('selectionSummary').style.display = selected.length > 0 ? 'block' : 'none';
         document.getElementById('bulkPayBtn').style.display = selected.length > 0 ? 'inline-block' : 'none';
     }
 
-   async function processBulkPayment() {
+    async function processBulkPayment() {
         const selected = document.querySelectorAll('.row-check:checked');
-        const count = selected.length;
-        
-        // বর্তমান সিলেকশনের মোট ডিউটি কত তা বের করা
-        let currentSelectedDuty = 0;
-        selected.forEach(s => currentSelectedDuty += parseFloat(s.dataset.duty));
+        if(!confirm(`Pay for ${selected.length} items? \nTotal Duty: ${totalSelectedDuty.toFixed(2)}`)) return;
 
-        if(!confirm(`Proceed to pay for ${count} items? \nTotal Duty: ${currentSelectedDuty.toFixed(2)}`)) return;
-
-        const method = prompt("Select Payment Method (Cash/Bank):", "Cash");
+        const method = prompt("Payment Method (Cash/Bank):", "Cash");
         if (!method) return;
 
-        const totalCashReceived = prompt(`Total Duty is ${currentSelectedDuty.toFixed(2)}. \nEnter Total Cash Received for these ${count} items:`, currentSelectedDuty.toFixed(2));
-        
-        if (totalCashReceived === null) return;
+        const totalCashInput = prompt(`Total Duty: ${totalSelectedDuty.toFixed(2)}. \nEnter Total Cash Received:`, totalSelectedDuty.toFixed(2));
+        if (totalCashInput === null) return;
 
-        const totalCash = parseFloat(totalCashReceived);
-        
-        // আমরা প্রফিট বের করব: (মোট প্রাপ্ত টাকা - মোট ডিউটি)
-        // এই প্রফিটটি আমরা আইটেমগুলোর মধ্যে ভাগ করে দিব অথবা প্রথম আইটেমে সেট করব। 
-        // সহজ করার জন্য আমরা প্রতিটি আইটেমে (Cash = Duty) ধরব এবং অতিরিক্ত টাকাটা প্রফিট হিসেবে ভাগ করে দিব।
-        
-        const extraProfit = totalCash - currentSelectedDuty;
-        const profitPerItem = extraProfit / count;
+        const totalCash = parseFloat(totalCashInput);
+        const totalProfit = totalCash - totalSelectedDuty;
+        const profitPerItem = totalProfit / selected.length;
+
+        // বাটন ডিজেবল করে দেয়া যাতে মাল্টিপল ক্লিক না হয়
+        document.getElementById('bulkPayBtn').disabled = true;
+        document.getElementById('bulkPayBtn').innerText = "Processing...";
 
         for (let check of selected) {
             const beNo = check.dataset.beno;
             const duty = parseFloat(check.dataset.duty);
-            
-            // প্রতিটি আইটেমের ক্যাশ হবে তার ডিউটি + তার ভাগের প্রফিট
-            const finalCashForItem = duty + profitPerItem;
+            const finalCash = duty + profitPerItem;
 
             await fetch(`${API_URL}/beNo/${beNo}`, {
                 method: 'PATCH',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ 
                     status: 'Paid', 
-                    cash: finalCashForItem.toFixed(2), 
+                    cash: finalCash.toFixed(2), 
                     profit: profitPerItem.toFixed(2), 
                     method: method 
                 })
             });
         }
-        alert("Bulk Payment Successful!");
+
+        alert("Bulk Payment Success!");
+        document.getElementById('bulkPayBtn').disabled = false;
+        document.getElementById('bulkPayBtn').innerText = "Pay Selected";
         loadRecords();
     }
 
-    // --- Filter & Others ---
+    // --- Others ---
     function applyAllFilters() {
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
         let filtered = allRecords.filter(item => (currentUser.email === ADMIN_EMAIL || item.user === currentUser.email));
-        
         if(currentUser.email === ADMIN_EMAIL) {
             const user = document.getElementById('userFilter').value;
             if(user !== 'all') filtered = filtered.filter(item => item.user === user);
@@ -327,10 +318,9 @@
     };
 
     async function updatePayment(beNo, duty) {
-        const method = prompt("Payment Method (Cash/Bank):", "Cash");
-        if(!method) return;
-        const cash = prompt("Enter Cash Received:");
-        if (!cash) return;
+        const method = prompt("Method (Cash/Bank):", "Cash");
+        const cash = prompt("Cash Received:");
+        if (!cash || !method) return;
         const profit = (parseFloat(cash) - parseFloat(duty)).toFixed(2);
         await fetch(`${API_URL}/beNo/${beNo}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, 
             body: JSON.stringify({ status: 'Paid', cash: cash, profit: profit, method: method }) 
@@ -347,4 +337,3 @@
 </script>
 </body>
 </html>
-
