@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customs Pro | Secure User Portal</title>
+    <title>Customs Pro | Bulk Payment & Method</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
@@ -25,13 +25,13 @@
         input, select { padding: 10px; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
         .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
         .btn-save { background: var(--success); color: white; width: 100%; }
-        .btn-today { background: #607d8b; color: white; }
+        .btn-bulk-pay { background: #ff9800; color: white; display: none; }
+        #selectionSummary { display: none; background: #fff3e0; padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; border: 1px solid #ffe0b2; margin-right: 10px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; }
         th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f1f3f4; color: #5f6368; }
         .status-paid { color: var(--success); font-weight: bold; }
         .status-pending { color: var(--danger); font-weight: bold; }
-        #adminTools { display: none; }
         @media print { .no-print { display: none !important; } #dashboard { display: block !important; } }
     </style>
 </head>
@@ -51,8 +51,10 @@
             <img id="userImg" src="">
             <div><b id="userName"></b><br><small id="userEmail"></small></div>
         </div>
-        <div class="no-print">
-            <button class="btn" style="background: #34495e; color:white; margin-right:5px;" onclick="window.print()">Print Report</button>
+        <div class="no-print" style="display:flex; align-items:center;">
+            <div id="selectionSummary">Selected Duty: <span id="selectedDutyTotal">0.00</span></div>
+            <button id="bulkPayBtn" class="btn btn-bulk-pay" onclick="processBulkPayment()">Pay Selected</button>
+            <button class="btn" style="background: #34495e; color:white; margin: 0 5px;" onclick="window.print()">Print</button>
             <button class="btn" style="background:#eee;" onclick="logout()">Logout</button>
         </div>
     </div>
@@ -81,14 +83,14 @@
         <div class="form-grid">
             <input type="date" id="startDate">
             <input type="date" id="endDate">
-            <div id="adminTools">
+            <div id="adminTools" style="display:none;">
                 <select id="userFilter" onchange="applyAllFilters()">
                     <option value="all">All Users</option>
                 </select>
             </div>
             <div style="display: flex; gap: 5px;">
                 <button class="btn" style="background:var(--dark); color:white; flex:1;" onclick="applyAllFilters()">Apply Filter</button>
-                <button class="btn btn-today" style="flex:1;" onclick="loadTodayData()">Today</button>
+                <button class="btn" style="background:#607d8b; color:white; flex:1;" onclick="loadTodayData()">Today</button>
             </div>
             <input type="text" id="searchBox" placeholder="Search B/E or AIN..." onkeyup="textFilter()">
         </div>
@@ -98,6 +100,7 @@
         <table id="reportTable">
             <thead>
                 <tr>
+                    <th class="no-print"><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
                     <th>Date</th>
                     <th>User</th>
                     <th>Declarant Name</th>
@@ -126,10 +129,8 @@
 
     window.onload = function () {
         const savedUser = localStorage.getItem('customsUser');
-        if (savedUser) {
-            currentUser = JSON.parse(savedUser);
-            showDashboard();
-        } else {
+        if (savedUser) { currentUser = JSON.parse(savedUser); showDashboard(); } 
+        else {
             google.accounts.id.initialize({ client_id: CLIENT_ID, callback: onLogin });
             google.accounts.id.renderButton(document.getElementById("g_id_signin"), { theme: "outline", size: "large", width: "100%" });
         }
@@ -147,76 +148,30 @@
         document.getElementById('userName').innerText = currentUser.name;
         document.getElementById('userEmail').innerText = currentUser.email;
         document.getElementById('userImg').src = currentUser.picture;
-        
-        if(currentUser.email === ADMIN_EMAIL) {
-            document.getElementById('adminTools').style.display = 'block';
-        }
+        if(currentUser.email === ADMIN_EMAIL) document.getElementById('adminTools').style.display = 'block';
         loadRecords();
-        fetch(AIN_URL).then(res => res.json()).then(data => ainDatabase = data).catch(e => {});
+        fetch(AIN_URL).then(res => res.json()).then(data => ainDatabase = data);
     }
 
-    function logout() {
-        localStorage.removeItem('customsUser');
-        location.reload();
-    }
+    function logout() { localStorage.removeItem('customsUser'); location.reload(); }
 
     async function loadRecords() {
         const res = await fetch(API_URL);
         allRecords = await res.json();
-        
-        if(currentUser.email === ADMIN_EMAIL) {
-            updateUserDropdown();
-        }
+        if(currentUser.email === ADMIN_EMAIL) updateUserDropdown();
         loadTodayData();
+    }
+
+    function updateUserDropdown() {
+        const select = document.getElementById('userFilter');
+        const users = [...new Set(allRecords.map(item => item.user))];
+        select.innerHTML = '<option value="all">All Users</option>';
+        users.forEach(user => select.innerHTML += `<option value="${user}">${user.split('@')[0]}</option>`);
     }
 
     function loadTodayData() {
         const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
-        
-        // ফিল্টারিং লজিক: অ্যাডমিন হলে সব আজকের ডাটা, ইউজার হলে শুধু তার আজকের ডাটা
-        const filtered = allRecords.filter(item => {
-            const isToday = item.date === today;
-            const isOwnData = item.user === currentUser.email;
-            const isAdmin = currentUser.email === ADMIN_EMAIL;
-            return isToday && (isAdmin || isOwnData);
-        });
-
-        renderTable(filtered);
-        document.getElementById('startDate').value = '';
-        document.getElementById('endDate').value = '';
-        if(document.getElementById('userFilter')) document.getElementById('userFilter').value = 'all';
-    }
-
-    function applyAllFilters() {
-        const start = document.getElementById('startDate').value;
-        const end = document.getElementById('endDate').value;
-        const isAdmin = (currentUser.email === ADMIN_EMAIL);
-        
-        let filtered = allRecords;
-
-        // ১. ইউজার ভিত্তিক ফিল্টার (সিকিউরিটি লজিক)
-        if (!isAdmin) {
-            // সাধারণ ইউজার শুধুমাত্র তার নিজের ডাটা ফিল্টার করতে পারবে
-            filtered = filtered.filter(item => item.user === currentUser.email);
-        } else {
-            // অ্যাডমিন চাইলে ড্রপডাউন থেকে নির্দিষ্ট ইউজার সিলেক্ট করতে পারে
-            const selectedUser = document.getElementById('userFilter').value;
-            if(selectedUser !== 'all') {
-                filtered = filtered.filter(item => item.user === selectedUser);
-            }
-        }
-
-        // ২. তারিখ ভিত্তিক ফিল্টার
-        if(start && end) {
-            const dStart = new Date(start);
-            const dEnd = new Date(end);
-            filtered = filtered.filter(item => {
-                const [d, m, y] = item.date.split('-');
-                const itemDate = new Date(y, m - 1, d);
-                return itemDate >= dStart && itemDate <= dEnd;
-            });
-        }
-        
+        const filtered = allRecords.filter(item => item.date === today && (currentUser.email === ADMIN_EMAIL || item.user === currentUser.email));
         renderTable(filtered);
     }
 
@@ -232,6 +187,9 @@
 
             tbody.innerHTML += `
                 <tr>
+                    <td class="no-print">
+                        ${item.status === 'Pending' ? `<input type="checkbox" class="row-check" data-beno="${item.beNo}" data-duty="${item.duty}" onclick="updateSelectionSummary()">` : ''}
+                    </td>
                     <td>${item.date}</td>
                     <td><small>${item.user.split('@')[0]}</small></td>
                     <td style="text-align:left;">${item.name || ''}</td>
@@ -247,24 +205,81 @@
                 </tr>`;
         });
         document.getElementById('statMine').innerText = data.length;
-        document.getElementById('statDuty').innerText = dSum.toLocaleString(undefined, {minimumFractionDigits: 2});
-        document.getElementById('statCash').innerText = cSum.toLocaleString(undefined, {minimumFractionDigits: 2});
-        document.getElementById('statProfit').innerText = pSum.toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('statDuty').innerText = dSum.toLocaleString();
+        document.getElementById('statCash').innerText = cSum.toLocaleString();
+        document.getElementById('statProfit').innerText = pSum.toLocaleString();
+        updateSelectionSummary(); // রিসেট সামারি
     }
 
-    // ... (বাকি ফাংশনগুলো অপরিবর্তিত থাকবে) ...
-    function updateUserDropdown() {
-        const select = document.getElementById('userFilter');
-        const users = [...new Set(allRecords.map(item => item.user))];
-        select.innerHTML = '<option value="all">All Users</option>';
-        users.forEach(user => {
-            select.innerHTML += `<option value="${user}">${user.split('@')[0]}</option>`;
-        });
+    // --- Bulk Payment Functions ---
+    function toggleSelectAll() {
+        const master = document.getElementById('selectAll');
+        document.querySelectorAll('.row-check').forEach(c => c.checked = master.checked);
+        updateSelectionSummary();
+    }
+
+    function updateSelectionSummary() {
+        const selected = document.querySelectorAll('.row-check:checked');
+        let total = 0;
+        selected.forEach(s => total += parseFloat(s.dataset.duty));
+        
+        document.getElementById('selectedDutyTotal').innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('selectionSummary').style.display = selected.length > 0 ? 'block' : 'none';
+        document.getElementById('bulkPayBtn').style.display = selected.length > 0 ? 'inline-block' : 'none';
+    }
+
+    async function processBulkPayment() {
+        const selected = document.querySelectorAll('.row-check:checked');
+        const count = selected.length;
+        const totalDuty = document.getElementById('selectedDutyTotal').innerText;
+
+        if(!confirm(`Proceed to pay for ${count} items? \nTotal Duty: ${totalDuty}`)) return;
+
+        const method = prompt("Select Payment Method (Type: Cash or Bank):", "Cash");
+        if (!method) return;
+
+        const cashPerItem = prompt(`Total Duty is ${totalDuty}. \nEnter actual Cash Received for EACH item (Leave blank for same as duty):`);
+        
+        for (let check of selected) {
+            const beNo = check.dataset.beno;
+            const duty = parseFloat(check.dataset.duty);
+            const cashVal = cashPerItem ? parseFloat(cashPerItem) : duty;
+            const profit = (cashVal - duty).toFixed(2);
+
+            await fetch(`${API_URL}/beNo/${beNo}`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ status: 'Paid', cash: cashVal, profit: profit, method: method })
+            });
+        }
+        alert("Success! All selected records updated.");
+        loadRecords();
+    }
+
+    // --- Filter & Others ---
+    function applyAllFilters() {
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+        let filtered = allRecords.filter(item => (currentUser.email === ADMIN_EMAIL || item.user === currentUser.email));
+        
+        if(currentUser.email === ADMIN_EMAIL) {
+            const user = document.getElementById('userFilter').value;
+            if(user !== 'all') filtered = filtered.filter(item => item.user === user);
+        }
+        if(start && end) {
+            const dStart = new Date(start); const dEnd = new Date(end);
+            filtered = filtered.filter(item => {
+                const [d, m, y] = item.date.split('-');
+                const itemDate = new Date(y, m - 1, d);
+                return itemDate >= dStart && itemDate <= dEnd;
+            });
+        }
+        renderTable(filtered);
     }
 
     function textFilter() {
         const q = document.getElementById('searchBox').value.toLowerCase();
-        const filtered = allRecords.filter(r => (r.user === currentUser.email || currentUser.email === ADMIN_EMAIL) && (r.beNo.toLowerCase().includes(q) || r.ain.toLowerCase().includes(q)));
+        const filtered = allRecords.filter(r => (currentUser.email === ADMIN_EMAIL || r.user === currentUser.email) && (r.beNo.toLowerCase().includes(q) || r.ain.toLowerCase().includes(q)));
         renderTable(filtered);
     }
 
@@ -292,11 +307,13 @@
     };
 
     async function updatePayment(beNo, duty) {
+        const method = prompt("Payment Method (Cash/Bank):", "Cash");
+        if(!method) return;
         const cash = prompt("Enter Cash Received:");
         if (!cash) return;
         const profit = (parseFloat(cash) - parseFloat(duty)).toFixed(2);
         await fetch(`${API_URL}/beNo/${beNo}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify({ status: 'Paid', cash: cash, profit: profit }) 
+            body: JSON.stringify({ status: 'Paid', cash: cash, profit: profit, method: method }) 
         });
         loadRecords();
     }
