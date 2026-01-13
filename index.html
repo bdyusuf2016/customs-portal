@@ -150,6 +150,14 @@
     const AIN_URL = API_URL + "?sheet=AIN_List";
     const ADMIN_EMAIL = "mdyusufcbc@gmail.com"; 
 
+    // মেথড ডিসপ্লে নেম ম্যাপিং অবজেক্ট
+    const methodNames = {
+        "Cash": "Cash", "Bank": "Bank", "bkashpay": "bKash Payment",
+        "bkashpersonal": "bKash Personal", "rocketpers": "Rocket Personal",
+        "rocketagent": "Rocket Cashout", "upaypersonal": "Upay Personal",
+        "upayagent": "Upay Cashout", "tappers": "Tap Personal", "tapagent": "Tap Agent"
+    };
+
     let currentUser = null;
     let ainDatabase = [];
     let allRecords = [];
@@ -201,6 +209,9 @@
             const profit = parseFloat(item.profit || 0);
             dSum += duty; cSum += cash; pSum += profit;
 
+            // ভ্যালুর পরিবর্তে ডিসপ্লে নেম দেখানোর লজিক
+            const displayMethod = methodNames[item.method] || item.method || '-';
+
             tbody.innerHTML += `
                 <tr>
                     <td class="no-print">
@@ -213,7 +224,7 @@
                     <td>${duty.toFixed(2)}</td>
                     <td>${cash.toFixed(2)}</td>
                     <td style="color:${profit < 0 ? 'red' : 'green'}; font-weight:bold;">${profit.toFixed(2)}</td>
-                    <td><span class="badge-method">${item.method || '-'}</span></td> 
+                    <td><span class="badge-method">${displayMethod}</span></td> 
                     <td class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</td>
                     <td class="no-print">
                         ${item.status === 'Pending' ? `<button class="btn" style="background:var(--primary); color:white; font-size:11px;" onclick="updatePayment('${item.beNo}', ${item.duty})">Pay</button>` : ''}
@@ -228,7 +239,6 @@
         updateSelectionSummary();
     }
 
-    // --- উন্নত ফিল্টারিং সিস্টেম ---
     function applyAllFilters() {
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
@@ -236,22 +246,19 @@
         
         let filtered = allRecords.filter(item => (currentUser.email === ADMIN_EMAIL || item.user === currentUser.email));
         
-        // অ্যাডমিন ফিল্টার
         if(currentUser.email === ADMIN_EMAIL) {
             const user = document.getElementById('userFilter').value;
             if(user !== 'all' && user !== "") filtered = filtered.filter(item => item.user === user);
         }
 
-        // পেমেন্ট মেথড ফিল্টার
         if(method !== 'all') {
             filtered = filtered.filter(item => item.method === method);
         }
 
-        // তারিখ ফিল্টার (DD-MM-YYYY কে YYYY-MM-DD তে রূপান্তর করে তুলনা করা হয়েছে)
         if(start && end) {
             const dStart = new Date(start); 
             const dEnd = new Date(end);
-            dEnd.setHours(23, 59, 59); // দিনের শেষ পর্যন্ত ডাটা নিতে
+            dEnd.setHours(23, 59, 59);
 
             filtered = filtered.filter(item => {
                 const [d, m, y] = item.date.split('-');
@@ -262,12 +269,10 @@
         renderTable(filtered);
     }
 
-    // Today বাটনেও মেথড ফিল্টার কাজ করবে
     function loadTodayData() {
         const todayStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
         const method = document.getElementById('methodFilter').value;
         
-        // তারিখ ইনপুট বক্সগুলো পরিষ্কার করে দেওয়া
         document.getElementById('startDate').value = '';
         document.getElementById('endDate').value = '';
 
@@ -289,7 +294,6 @@
         renderTable(filtered);
     }
 
-    // --- অন্যান্য ফাংশনসমূহ ---
     function handleAINAutoFill() {
         const found = ainDatabase.find(item => String(item.ain).trim() === document.getElementById('ain').value.trim());
         document.getElementById('declarant').value = found ? found.name : "Not Found";
