@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customs Pro | Payment Method Filter Update</title>
+    <title>Customs Pro | Final Fixed Edition</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
@@ -68,33 +68,9 @@
     </div>
 
     <div class="card no-print">
-        <form id="beForm" class="form-grid">
-            <input type="text" id="ain" placeholder="AIN No" oninput="handleAINAutoFill()" required>
-            <input type="text" id="declarant" placeholder="Declarant Name" readonly style="background:#f1f3f4;">
-            <input type="text" id="beNo" placeholder="B/E No" required>
-            <input type="text" id="beYear" placeholder="Year" required>
-            <input type="number" id="duty" placeholder="Duty Amt" step="any" required>
-            <input type="number" id="cashReceived" placeholder="Cash Rec. (Optional)" step="any">
-            <select id="method">
-                <option value="Cash">Cash</option>
-                <option value="Bank">Bank</option>
-                <option value="bkashpay">bKash Payment</option>
-                <option value="bkashpersonal">bKash Personal</option>
-                <option value="rocketpers">Rocket Personal</option>
-                <option value="rocketagent">Rocket Cashout</option>
-                <option value="upaypersonal">Upay Personal</option>
-                <option value="upayagent">Upay Cashout</option>
-                <option value="tappers">Tap Personal</option>
-                <option value="tapagent">Tap Agent</option>
-            </select>
-            <button type="submit" class="btn btn-save">Save Record</button>
-        </form>
-    </div>
-
-    <div class="card no-print">
         <div class="form-grid">
-            <input type="date" id="startDate">
-            <input type="date" id="endDate">
+            <input type="date" id="startDate" onchange="applyAllFilters()">
+            <input type="date" id="endDate" onchange="applyAllFilters()">
             
             <select id="methodFilter" onchange="applyAllFilters()">
                 <option value="all">All Methods</option>
@@ -113,12 +89,37 @@
             <div id="adminTools" style="display:none;">
                 <select id="userFilter" onchange="applyAllFilters()"></select>
             </div>
+            
             <div style="display: flex; gap: 5px;">
                 <button class="btn" style="background:var(--dark); color:white; flex:1;" onclick="applyAllFilters()">Apply</button>
                 <button class="btn" style="background:#607d8b; color:white; flex:1;" onclick="loadTodayData()">Today</button>
             </div>
-            <input type="text" id="searchBox" placeholder="Search..." onkeyup="textFilter()">
+            <input type="text" id="searchBox" placeholder="Search B/E or AIN..." onkeyup="textFilter()">
         </div>
+    </div>
+
+    <div class="card no-print">
+        <form id="beForm" class="form-grid">
+            <input type="text" id="ain" placeholder="AIN No" oninput="handleAINAutoFill()" required>
+            <input type="text" id="declarant" placeholder="Declarant Name" readonly style="background:#f1f3f4;">
+            <input type="text" id="beNo" placeholder="B/E No" required>
+            <input type="text" id="beYear" placeholder="Year" value="2026" required>
+            <input type="number" id="duty" placeholder="Duty Amt" step="any" required>
+            <input type="number" id="cashReceived" placeholder="Cash Rec. (Optional)" step="any">
+            <select id="method">
+                <option value="Cash">Cash</option>
+                <option value="Bank">Bank</option>
+                <option value="bkashpay">bKash Payment</option>
+                <option value="bkashpersonal">bKash Personal</option>
+                <option value="rocketpers">Rocket Personal</option>
+                <option value="rocketagent">Rocket Cashout</option>
+                <option value="upaypersonal">Upay Personal</option>
+                <option value="upayagent">Upay Cashout</option>
+                <option value="tappers">Tap Personal</option>
+                <option value="tapagent">Tap Agent</option>
+            </select>
+            <button type="submit" class="btn btn-save">Save Record</button>
+        </form>
     </div>
 
     <div class="card" style="padding:0; overflow-x: auto;">
@@ -133,7 +134,8 @@
                     <th>Duty</th>
                     <th>Cash</th>
                     <th>Profit</th>
-                    <th>Method</th> <th>Status</th>
+                    <th>Method</th>
+                    <th>Status</th>
                     <th class="no-print">Action</th>
                 </tr>
             </thead>
@@ -194,9 +196,10 @@
         let dSum = 0, cSum = 0, pSum = 0;
 
         data.slice().reverse().forEach(item => {
-            dSum += parseFloat(item.duty || 0);
-            cSum += parseFloat(item.cash || 0);
-            pSum += parseFloat(item.profit || 0);
+            const duty = parseFloat(item.duty || 0);
+            const cash = parseFloat(item.cash || 0);
+            const profit = parseFloat(item.profit || 0);
+            dSum += duty; cSum += cash; pSum += profit;
 
             tbody.innerHTML += `
                 <tr>
@@ -207,10 +210,11 @@
                     <td><small>${item.user.split('@')[0]}</small></td>
                     <td style="text-align:left;">${item.name || ''}</td>
                     <td><b>${item.ain}</b><br>${item.beNo}/${item.beYear}</td>
-                    <td>${parseFloat(item.duty).toFixed(2)}</td>
-                    <td>${parseFloat(item.cash || 0).toFixed(2)}</td>
-                    <td>${parseFloat(item.profit || 0).toFixed(2)}</td>
-                    <td><span class="badge-method">${item.method || '-'}</span></td> <td class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</td>
+                    <td>${duty.toFixed(2)}</td>
+                    <td>${cash.toFixed(2)}</td>
+                    <td style="color:${profit < 0 ? 'red' : 'green'}; font-weight:bold;">${profit.toFixed(2)}</td>
+                    <td><span class="badge-method">${item.method || '-'}</span></td> 
+                    <td class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</td>
                     <td class="no-print">
                         ${item.status === 'Pending' ? `<button class="btn" style="background:var(--primary); color:white; font-size:11px;" onclick="updatePayment('${item.beNo}', ${item.duty})">Pay</button>` : ''}
                         <button class="btn" style="background:#feeae6; color:var(--danger); font-size:11px;" onclick="deleteRecord('${item.beNo}')">Del</button>
@@ -218,12 +222,13 @@
                 </tr>`;
         });
         document.getElementById('statMine').innerText = data.length;
-        document.getElementById('statDuty').innerText = dSum.toLocaleString();
-        document.getElementById('statCash').innerText = cSum.toLocaleString();
-        document.getElementById('statProfit').innerText = pSum.toLocaleString();
+        document.getElementById('statDuty').innerText = dSum.toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('statCash').innerText = cSum.toLocaleString(undefined, {minimumFractionDigits: 2});
+        document.getElementById('statProfit').innerText = pSum.toLocaleString(undefined, {minimumFractionDigits: 2});
         updateSelectionSummary();
     }
 
+    // --- উন্নত ফিল্টারিং সিস্টেম ---
     function applyAllFilters() {
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
@@ -231,99 +236,60 @@
         
         let filtered = allRecords.filter(item => (currentUser.email === ADMIN_EMAIL || item.user === currentUser.email));
         
+        // অ্যাডমিন ফিল্টার
         if(currentUser.email === ADMIN_EMAIL) {
             const user = document.getElementById('userFilter').value;
-            if(user !== 'all') filtered = filtered.filter(item => item.user === user);
+            if(user !== 'all' && user !== "") filtered = filtered.filter(item => item.user === user);
         }
 
-        // মেথড ফিল্টার লজিক
+        // পেমেন্ট মেথড ফিল্টার
         if(method !== 'all') {
             filtered = filtered.filter(item => item.method === method);
         }
 
+        // তারিখ ফিল্টার (DD-MM-YYYY কে YYYY-MM-DD তে রূপান্তর করে তুলনা করা হয়েছে)
         if(start && end) {
-            const dStart = new Date(start); const dEnd = new Date(end);
+            const dStart = new Date(start); 
+            const dEnd = new Date(end);
+            dEnd.setHours(23, 59, 59); // দিনের শেষ পর্যন্ত ডাটা নিতে
+
             filtered = filtered.filter(item => {
                 const [d, m, y] = item.date.split('-');
-                const itemDate = new Date(y, m - 1, d);
+                const itemDate = new Date(`${y}-${m}-${d}`);
                 return itemDate >= dStart && itemDate <= dEnd;
             });
         }
         renderTable(filtered);
     }
 
-    // --- Bulk Payment, Selection, and other functions ---
-    async function processBulkPayment() {
-        const selected = document.querySelectorAll('.row-check:checked');
-        if(!confirm(`Pay for ${selected.length} items? \nTotal Duty: ${totalSelectedDuty.toFixed(2)}`)) return;
-
-        const method = prompt("Payment Method:", "Cash");
-        if (!method) return;
-
-        const totalCashInput = prompt(`Total Duty: ${totalSelectedDuty.toFixed(2)}. \nEnter Total Cash Received:`, totalSelectedDuty.toFixed(2));
-        if (totalCashInput === null) return;
-
-        const totalCash = parseFloat(totalCashInput);
-        const totalProfit = totalCash - totalSelectedDuty;
-        const profitPerItem = totalProfit / selected.length;
-
-        document.getElementById('bulkPayBtn').disabled = true;
-        document.getElementById('bulkPayBtn').innerText = "Processing...";
-
-        for (let check of selected) {
-            const beNo = check.dataset.beno;
-            const duty = parseFloat(check.dataset.duty);
-            const finalCash = duty + profitPerItem;
-
-            await fetch(`${API_URL}/beNo/${beNo}`, {
-                method: 'PATCH',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ 
-                    status: 'Paid', 
-                    cash: finalCash.toFixed(2), 
-                    profit: profitPerItem.toFixed(2), 
-                    method: method 
-                })
-            });
-        }
-        alert("Bulk Payment Success!");
-        document.getElementById('bulkPayBtn').disabled = false;
-        document.getElementById('bulkPayBtn').innerText = "Pay Selected";
-        loadRecords();
-    }
-
-    function toggleSelectAll() {
-        document.querySelectorAll('.row-check').forEach(c => c.checked = document.getElementById('selectAll').checked);
-        updateSelectionSummary();
-    }
-
-    function updateSelectionSummary() {
-        const selected = document.querySelectorAll('.row-check:checked');
-        totalSelectedDuty = 0;
-        selected.forEach(s => totalSelectedDuty += parseFloat(s.dataset.duty));
-        document.getElementById('selectedDutyTotal').innerText = totalSelectedDuty.toFixed(2);
-        document.getElementById('selectionSummary').style.display = selected.length > 0 ? 'block' : 'none';
-        document.getElementById('bulkPayBtn').style.display = selected.length > 0 ? 'inline-block' : 'none';
-    }
-
+    // Today বাটনেও মেথড ফিল্টার কাজ করবে
     function loadTodayData() {
-        const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
-        document.getElementById('methodFilter').value = 'all'; // রিসেট মেথড ফিল্টার অন টুডে
-        renderTable(allRecords.filter(item => item.date === today && (currentUser.email === ADMIN_EMAIL || item.user === currentUser.email)));
-    }
+        const todayStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+        const method = document.getElementById('methodFilter').value;
+        
+        // তারিখ ইনপুট বক্সগুলো পরিষ্কার করে দেওয়া
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
 
-    function updateUserDropdown() {
-        const select = document.getElementById('userFilter');
-        const users = [...new Set(allRecords.map(item => item.user))];
-        select.innerHTML = '<option value="all">All Users</option>';
-        users.forEach(user => select.innerHTML += `<option value="${user}">${user.split('@')[0]}</option>`);
+        let filtered = allRecords.filter(item => item.date === todayStr && (currentUser.email === ADMIN_EMAIL || item.user === currentUser.email));
+        
+        if(method !== 'all') {
+            filtered = filtered.filter(item => item.method === method);
+        }
+        
+        renderTable(filtered);
     }
 
     function textFilter() {
         const q = document.getElementById('searchBox').value.toLowerCase();
-        renderTable(allRecords.filter(r => (currentUser.email === ADMIN_EMAIL || r.user === currentUser.email) && (r.beNo.toLowerCase().includes(q) || r.ain.toLowerCase().includes(q))));
+        const filtered = allRecords.filter(r => 
+            (currentUser.email === ADMIN_EMAIL || r.user === currentUser.email) && 
+            (r.beNo.toLowerCase().includes(q) || r.ain.toLowerCase().includes(q))
+        );
+        renderTable(filtered);
     }
 
+    // --- অন্যান্য ফাংশনসমূহ ---
     function handleAINAutoFill() {
         const found = ainDatabase.find(item => String(item.ain).trim() === document.getElementById('ain').value.trim());
         document.getElementById('declarant').value = found ? found.name : "Not Found";
@@ -344,16 +310,57 @@
         };
         await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [payload] }) });
         document.getElementById('beForm').reset();
+        document.getElementById('beYear').value = "2026";
         loadRecords();
     };
 
+    async function processBulkPayment() {
+        const selected = document.querySelectorAll('.row-check:checked');
+        if(!confirm(`Pay for ${selected.length} items?`)) return;
+        const method = prompt("Payment Method:", "Cash");
+        const totalCash = prompt(`Total Cash for ${selected.length} items:`, totalSelectedDuty);
+        if (!method || !totalCash) return;
+
+        const profitPerItem = (parseFloat(totalCash) - totalSelectedDuty) / selected.length;
+        for (let check of selected) {
+            const beNo = check.dataset.beno;
+            const duty = parseFloat(check.dataset.duty);
+            await fetch(`${API_URL}/beNo/${beNo}`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ status: 'Paid', cash: (duty + profitPerItem).toFixed(2), profit: profitPerItem.toFixed(2), method: method })
+            });
+        }
+        loadRecords();
+    }
+
+    function toggleSelectAll() {
+        document.querySelectorAll('.row-check').forEach(c => c.checked = document.getElementById('selectAll').checked);
+        updateSelectionSummary();
+    }
+
+    function updateSelectionSummary() {
+        const selected = document.querySelectorAll('.row-check:checked');
+        totalSelectedDuty = 0;
+        selected.forEach(s => totalSelectedDuty += parseFloat(s.dataset.duty));
+        document.getElementById('selectedDutyTotal').innerText = totalSelectedDuty.toFixed(2);
+        document.getElementById('selectionSummary').style.display = selected.length > 0 ? 'block' : 'none';
+        document.getElementById('bulkPayBtn').style.display = selected.length > 0 ? 'inline-block' : 'none';
+    }
+
+    function updateUserDropdown() {
+        const select = document.getElementById('userFilter');
+        const users = [...new Set(allRecords.map(item => item.user))];
+        select.innerHTML = '<option value="all">All Users</option>';
+        users.forEach(user => select.innerHTML += `<option value="${user}">${user.split('@')[0]}</option>`);
+    }
+
     async function updatePayment(beNo, duty) {
         const method = prompt("Method:", "Cash");
-        const cash = prompt("Cash Received:");
+        const cash = prompt("Cash Received:", duty);
         if (!cash || !method) return;
-        const profit = (parseFloat(cash) - parseFloat(duty)).toFixed(2);
         await fetch(`${API_URL}/beNo/${beNo}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify({ status: 'Paid', cash: cash, profit: profit, method: method }) 
+            body: JSON.stringify({ status: 'Paid', cash: cash, profit: (parseFloat(cash) - duty).toFixed(2), method: method }) 
         });
         loadRecords();
     }
