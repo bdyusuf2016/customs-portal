@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customs Pro | Payment Method View</title>
+    <title>Customs Pro | Payment Method Filter Update</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
@@ -75,15 +75,18 @@
             <input type="text" id="beYear" placeholder="Year" required>
             <input type="number" id="duty" placeholder="Duty Amt" step="any" required>
             <input type="number" id="cashReceived" placeholder="Cash Rec. (Optional)" step="any">
-            <select id="method"><option value="Cash">Cash</option><option value="Bank">Bank</option><option value="Bank">Bank</option>
-<option value="bkashpay">bKash Payment</option>
-<option value="bkashpersonal">bKash Personal</option>
-<option value="rocketpers">Rocket Personal</option>
-<option value="rockeragent">Rocket Cashout</option>
-<option value="upaypersonal">Upay Personal</option>
-<option value="upayagent">Upay Cashout</option>
-<option value="tappers">Tap Personal</option>
-<option value="tapagent">Tap Agent</option></select>
+            <select id="method">
+                <option value="Cash">Cash</option>
+                <option value="Bank">Bank</option>
+                <option value="bkashpay">bKash Payment</option>
+                <option value="bkashpersonal">bKash Personal</option>
+                <option value="rocketpers">Rocket Personal</option>
+                <option value="rocketagent">Rocket Cashout</option>
+                <option value="upaypersonal">Upay Personal</option>
+                <option value="upayagent">Upay Cashout</option>
+                <option value="tappers">Tap Personal</option>
+                <option value="tapagent">Tap Agent</option>
+            </select>
             <button type="submit" class="btn btn-save">Save Record</button>
         </form>
     </div>
@@ -92,6 +95,21 @@
         <div class="form-grid">
             <input type="date" id="startDate">
             <input type="date" id="endDate">
+            
+            <select id="methodFilter" onchange="applyAllFilters()">
+                <option value="all">All Methods</option>
+                <option value="Cash">Cash</option>
+                <option value="Bank">Bank</option>
+                <option value="bkashpay">bKash Payment</option>
+                <option value="bkashpersonal">bKash Personal</option>
+                <option value="rocketpers">Rocket Personal</option>
+                <option value="rocketagent">Rocket Cashout</option>
+                <option value="upaypersonal">Upay Personal</option>
+                <option value="upayagent">Upay Cashout</option>
+                <option value="tappers">Tap Personal</option>
+                <option value="tapagent">Tap Agent</option>
+            </select>
+
             <div id="adminTools" style="display:none;">
                 <select id="userFilter" onchange="applyAllFilters()"></select>
             </div>
@@ -206,12 +224,40 @@
         updateSelectionSummary();
     }
 
-    // --- Bulk Payment Logic ---
+    function applyAllFilters() {
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+        const method = document.getElementById('methodFilter').value;
+        
+        let filtered = allRecords.filter(item => (currentUser.email === ADMIN_EMAIL || item.user === currentUser.email));
+        
+        if(currentUser.email === ADMIN_EMAIL) {
+            const user = document.getElementById('userFilter').value;
+            if(user !== 'all') filtered = filtered.filter(item => item.user === user);
+        }
+
+        // মেথড ফিল্টার লজিক
+        if(method !== 'all') {
+            filtered = filtered.filter(item => item.method === method);
+        }
+
+        if(start && end) {
+            const dStart = new Date(start); const dEnd = new Date(end);
+            filtered = filtered.filter(item => {
+                const [d, m, y] = item.date.split('-');
+                const itemDate = new Date(y, m - 1, d);
+                return itemDate >= dStart && itemDate <= dEnd;
+            });
+        }
+        renderTable(filtered);
+    }
+
+    // --- Bulk Payment, Selection, and other functions ---
     async function processBulkPayment() {
         const selected = document.querySelectorAll('.row-check:checked');
         if(!confirm(`Pay for ${selected.length} items? \nTotal Duty: ${totalSelectedDuty.toFixed(2)}`)) return;
 
-        const method = prompt("Payment Method (Cash/Bank):", "Cash");
+        const method = prompt("Payment Method:", "Cash");
         if (!method) return;
 
         const totalCashInput = prompt(`Total Duty: ${totalSelectedDuty.toFixed(2)}. \nEnter Total Cash Received:`, totalSelectedDuty.toFixed(2));
@@ -246,7 +292,6 @@
         loadRecords();
     }
 
-    // --- অন্যান্য ফাংশন আগের মতোই থাকবে ---
     function toggleSelectAll() {
         document.querySelectorAll('.row-check').forEach(c => c.checked = document.getElementById('selectAll').checked);
         updateSelectionSummary();
@@ -263,6 +308,7 @@
 
     function loadTodayData() {
         const today = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+        document.getElementById('methodFilter').value = 'all'; // রিসেট মেথড ফিল্টার অন টুডে
         renderTable(allRecords.filter(item => item.date === today && (currentUser.email === ADMIN_EMAIL || item.user === currentUser.email)));
     }
 
@@ -271,25 +317,6 @@
         const users = [...new Set(allRecords.map(item => item.user))];
         select.innerHTML = '<option value="all">All Users</option>';
         users.forEach(user => select.innerHTML += `<option value="${user}">${user.split('@')[0]}</option>`);
-    }
-
-    function applyAllFilters() {
-        const start = document.getElementById('startDate').value;
-        const end = document.getElementById('endDate').value;
-        let filtered = allRecords.filter(item => (currentUser.email === ADMIN_EMAIL || item.user === currentUser.email));
-        if(currentUser.email === ADMIN_EMAIL) {
-            const user = document.getElementById('userFilter').value;
-            if(user !== 'all') filtered = filtered.filter(item => item.user === user);
-        }
-        if(start && end) {
-            const dStart = new Date(start); const dEnd = new Date(end);
-            filtered = filtered.filter(item => {
-                const [d, m, y] = item.date.split('-');
-                const itemDate = new Date(y, m - 1, d);
-                return itemDate >= dStart && itemDate <= dEnd;
-            });
-        }
-        renderTable(filtered);
     }
 
     function textFilter() {
@@ -321,7 +348,7 @@
     };
 
     async function updatePayment(beNo, duty) {
-        const method = prompt("Method (Cash/Bank):", "Cash");
+        const method = prompt("Method:", "Cash");
         const cash = prompt("Cash Received:");
         if (!cash || !method) return;
         const profit = (parseFloat(cash) - parseFloat(duty)).toFixed(2);
@@ -340,4 +367,3 @@
 </script>
 </body>
 </html>
-
