@@ -256,31 +256,45 @@
         loadCollectionRecords(); e.target.reset();
     };
 
-    // --- FIXED DELETE FUNCTION ---
-    async function deleteData(id, type, date = null) {
-        if(!confirm("Delete this?")) return;
-        
-        let url;
-        if(type === 'main') {
-            url = `${API_URL}/beNo/${id}`;
-        } else {
-            // Summary ট্যাবে ডিলিট করার সময় AIN এবং তারিখ দিয়ে ফিল্টার করছি যাতে সঠিক ডাটা ডিলিট হয়
-            url = `${SUMMARY_URL}/ain/${id}`;
-        }
-
-        try {
-            const res = await fetch(url, { method: 'DELETE' });
-            if(res.ok) {
-                type === 'main' ? loadRecords() : loadCollectionRecords();
-            } else {
-                alert("ডিলিট করতে সমস্যা হয়েছে। শিট কানেকশন চেক করুন।");
-            }
-        } catch (e) {
-            console.error(e);
-        }
+    // --- UPDATED DELETE FUNCTION ---
+async function deleteData(id, type) {
+    if(!confirm("আপনি কি নিশ্চিতভাবে এটি ডিলিট করতে চান?")) return;
+    
+    // টাইপ অনুযায়ী সঠিক শিট এবং কলাম সিলেক্ট করা
+    let deleteUrl;
+    if(type === 'main') {
+        // B/E Records এর জন্য beNo কলাম ব্যবহার করে ডিলিট
+        deleteUrl = `${API_URL}/beNo/${id}`;
+    } else {
+        // AIN Summary এর জন্য ain কলাম ব্যবহার করে ডিলিট
+        // এখানে ?sheet=AIN_Summary যোগ করা হয়েছে যাতে ভুল শিটে হিট না করে
+        deleteUrl = `${API_URL}/ain/${id}?sheet=AIN_Summary`;
     }
+
+    try {
+        const response = await fetch(deleteUrl, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if(response.ok) {
+            alert("সফলভাবে ডিলিট হয়েছে!");
+            type === 'main' ? loadRecords() : loadCollectionRecords();
+        } else {
+            const errorText = await response.text();
+            console.error("Delete Error:", errorText);
+            alert("ডিলিট হয়নি! শিটে ওই ডাটাটি আছে কি না চেক করুন।");
+        }
+    } catch (error) {
+        console.error("Network Error:", error);
+        alert("ইন্টারনেট বা কানেকশন সমস্যা।");
+    }
+}
 
     function logout() { localStorage.removeItem('customsUser'); location.reload(); }
 </script>
 </body>
 </html>
+
