@@ -15,38 +15,29 @@
         #loginScreen { height: 100vh; display: flex; justify-content: center; align-items: center; background: #fff; }
         .login-card { padding: 40px; border-radius: 16px; box-shadow: var(--card-shadow); text-align: center; width: 320px; }
         #dashboard { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
-        
-        /* Tab Styling */
         .tab-bar { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid #ddd; }
         .tab-btn { padding: 10px 20px; border: none; cursor: pointer; background: #e0e0e0; border-radius: 8px 8px 0 0; font-weight: bold; transition: 0.3s; }
         .tab-btn.active { background: var(--primary); color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
         .header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .user-profile { display: flex; align-items: center; gap: 10px; }
         .user-profile img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary); }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .stat-card { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; }
         .stat-card b { font-size: 18px; color: #ffc107; display: block; }
-
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
         input, select { padding: 10px; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
-        
         .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
         .btn-save { background: var(--success); color: white; width: 100%; justify-content: center; }
-        .btn-pay { background: #e8f0fe; color: var(--primary); }
         .btn-del { background: #fce8e6; color: var(--danger); }
         .btn-print { background: #34495e; color: white; }
-
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th, td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f1f3f4; color: #5f6368; }
-        
         .status-paid { color: var(--success); font-weight: bold; background: #e6f4ea; padding: 4px 8px; border-radius: 4px; }
         .status-pending { color: var(--danger); font-weight: bold; background: #fce8e6; padding: 4px 8px; border-radius: 4px; }
-        
         @media print { .no-print { display: none !important; } #dashboard { display: block !important; } }
     </style>
 </head>
@@ -83,19 +74,6 @@
             <div class="stat-card">Total Duty <b id="statDuty">0.00</b></div>
             <div class="stat-card">Cash Received <b id="statCash">0.00</b></div>
         </div>
-
-        <div class="card no-print">
-            <div class="form-grid">
-                <input type="date" id="startDate" onchange="applyFilters()">
-                <input type="date" id="endDate" onchange="applyFilters()">
-                <select id="statusFilter" onchange="applyFilters()">
-                    <option value="all">All Status</option>
-                    <option value="Paid">Paid</option>
-                    <option value="Pending">Pending</option>
-                </select>
-            </div>
-        </div>
-
         <div class="card no-print">
             <form id="beForm" class="form-grid">
                 <input type="text" id="ain" placeholder="AIN No" oninput="autoFill('ain', 'declarant')" required>
@@ -105,11 +83,10 @@
                 <button type="submit" class="btn btn-save"><i class="fas fa-save"></i> Save</button>
             </form>
         </div>
-
         <div class="card" style="padding:0; overflow-x: auto;">
             <table>
                 <thead>
-                    <tr><th>Date</th><th>Declarant</th><th>AIN/BE</th><th>Duty</th><th>Cash</th><th>Status</th><th class="no-print">Action</th></tr>
+                    <tr><th>Date</th><th>Declarant</th><th>AIN/BE</th><th>Duty</th><th>Status</th><th class="no-print">Action</th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
@@ -119,20 +96,15 @@
     <div id="collectionTab" class="tab-content">
         <div class="stats-grid">
             <div class="stat-card">Bulk Entries <b id="sumCount">0</b></div>
-            <div class="stat-card">Sum Total <b id="sumTotal">0.00</b></div>
             <div class="stat-card">Sum Net <b id="sumNet">0.00</b></div>
         </div>
-
         <div class="card no-print">
-            <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            <div class="form-grid">
                 <input type="text" id="sumSearch" placeholder="Search AIN or Name..." onkeyup="applySumFilters()">
-                <div style="display: flex; gap: 5px;">
-                    <input type="date" id="sumStart" onchange="applySumFilters()">
-                    <input type="date" id="sumEnd" onchange="applySumFilters()">
-                </div>
+                <input type="date" id="sumStart" onchange="applySumFilters()">
+                <input type="date" id="sumEnd" onchange="applySumFilters()">
             </div>
         </div>
-
         <div class="card no-print">
             <form id="collectionForm" class="form-grid">
                 <input type="text" id="colAin" placeholder="AIN No" oninput="autoFill('colAin', 'colDeclarant')" required>
@@ -140,14 +112,10 @@
                 <input type="number" id="beCount" placeholder="B/E Count" required>
                 <input type="number" id="totalAmt" placeholder="Total Amount" required>
                 <input type="number" id="discount" placeholder="Discount Amt" value="0">
-                <select id="payMethod">
-                    <option value="Cash">Cash (নগদ)</option>
-                    <option value="Due">Due (বকেয়া)</option>
-                </select>
+                <select id="payMethod"><option value="Cash">Cash</option><option value="Due">Due</option></select>
                 <button type="submit" class="btn btn-save" style="background:var(--primary);"><i class="fas fa-plus"></i> Add Entry</button>
             </form>
         </div>
-
         <div class="card" style="padding:0; overflow-x: auto;">
             <table>
                 <thead>
@@ -189,7 +157,6 @@
         document.getElementById('dashboard').style.display = 'block';
         document.getElementById('userName').innerText = currentUser.name;
         document.getElementById('userImg').src = currentUser.picture;
-        
         fetch(AIN_URL).then(res => res.json()).then(data => ainDatabase = data);
         loadRecords();
         loadCollectionRecords();
@@ -208,27 +175,11 @@
         document.getElementById(nameId).value = found ? found.name : "Not Found";
     }
 
-    // --- Tab 1 Logic ---
+    // --- Tab 1 ---
     async function loadRecords() {
         const res = await fetch(API_URL);
         allRecords = await res.json();
-        applyFilters();
-    }
-
-    function applyFilters() {
-        let filtered = allRecords;
-        const status = document.getElementById('statusFilter').value;
-        const start = document.getElementById('startDate').value;
-        const end = document.getElementById('endDate').value;
-
-        if (status !== 'all') filtered = filtered.filter(r => r.status === status);
-        if (start && end) {
-            filtered = filtered.filter(r => {
-                const d = r.date.split('-').reverse().join('-');
-                return d >= start && d <= end;
-            });
-        }
-        renderMainTable(filtered);
+        renderMainTable(allRecords);
     }
 
     function renderMainTable(data) {
@@ -237,19 +188,15 @@
             <tr>
                 <td>${item.date}</td><td>${item.name || ''}</td>
                 <td><b>${item.ain}</b><br>${item.beNo}</td>
-                <td>${item.duty}</td><td>${item.cash || 0}</td>
+                <td>${item.duty}</td>
                 <td><span class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</span></td>
-                <td class="no-print"><button class="btn btn-del" onclick="deleteData('${item.beNo}', 'main')"><i class="fas fa-trash"></i></button></td>
+                <td class="no-print">
+                    <button class="btn btn-del" onclick="deleteData('${item.beNo}', 'main')"><i class="fas fa-trash"></i></button>
+                </td>
             </tr>`).join('');
-        
-        let dTotal = 0, cTotal = 0;
-        data.forEach(r => { dTotal += parseFloat(r.duty || 0); cTotal += parseFloat(r.cash || 0); });
-        document.getElementById('statMine').innerText = data.length;
-        document.getElementById('statDuty').innerText = dTotal.toFixed(2);
-        document.getElementById('statCash').innerText = cTotal.toFixed(2);
     }
 
-    // --- Tab 2: AIN Summary Search & Filter Logic ---
+    // --- Tab 2: AIN Summary ---
     async function loadCollectionRecords() {
         const res = await fetch(SUMMARY_URL);
         summaryRecords = await res.json();
@@ -261,49 +208,34 @@
         const search = document.getElementById('sumSearch').value.toLowerCase();
         const start = document.getElementById('sumStart').value;
         const end = document.getElementById('sumEnd').value;
-
-        // Search Filter
-        if (search) {
-            filtered = filtered.filter(r => 
-                r.ain.toLowerCase().includes(search) || 
-                r.name.toLowerCase().includes(search)
-            );
-        }
-
-        // Date Filter
+        if (search) filtered = filtered.filter(r => r.ain.toLowerCase().includes(search) || r.name.toLowerCase().includes(search));
         if (start && end) {
             filtered = filtered.filter(r => {
                 const d = r.date.split('-').reverse().join('-');
                 return d >= start && d <= end;
             });
         }
-
         renderSummaryTable(filtered);
     }
 
     function renderSummaryTable(data) {
         const tbody = document.getElementById('collectionTableBody');
-        let total = 0, net = 0;
-        
+        let net = 0;
         tbody.innerHTML = data.slice().reverse().map(item => {
-            const n = parseFloat(item.netAmount || 0);
-            total += parseFloat(item.totalAmount || 0);
-            net += n;
+            net += parseFloat(item.netAmount || 0);
             return `
             <tr>
                 <td>${item.date}</td><td>${item.ain}</td><td>${item.name}</td>
                 <td>${item.beCount}</td><td>${item.totalAmount}</td>
                 <td style="color:red;">-${item.discount}</td>
-                <td style="font-weight:bold; color:green;">${n.toFixed(2)}</td>
+                <td style="font-weight:bold; color:green;">${item.netAmount}</td>
                 <td><b>${item.method}</b></td>
                 <td class="no-print">
-                    <button class="btn btn-del" onclick="deleteData('${item.ain}', 'summary')"><i class="fas fa-trash"></i></button>
+                    <button class="btn btn-del" onclick="deleteData('${item.ain}', 'summary', '${item.date}')"><i class="fas fa-trash"></i></button>
                 </td>
             </tr>`;
         }).join('');
-
         document.getElementById('sumCount').innerText = data.length;
-        document.getElementById('sumTotal').innerText = total.toFixed(2);
         document.getElementById('sumNet').innerText = net.toFixed(2);
     }
 
@@ -324,11 +256,28 @@
         loadCollectionRecords(); e.target.reset();
     };
 
-    async function deleteData(id, type) {
+    // --- FIXED DELETE FUNCTION ---
+    async function deleteData(id, type, date = null) {
         if(!confirm("Delete this?")) return;
-        const url = type === 'main' ? `${API_URL}/beNo/${id}` : `${SUMMARY_URL}/ain/${id}`;
-        await fetch(url, { method: 'DELETE' });
-        type === 'main' ? loadRecords() : loadCollectionRecords();
+        
+        let url;
+        if(type === 'main') {
+            url = `${API_URL}/beNo/${id}`;
+        } else {
+            // Summary ট্যাবে ডিলিট করার সময় AIN এবং তারিখ দিয়ে ফিল্টার করছি যাতে সঠিক ডাটা ডিলিট হয়
+            url = `${SUMMARY_URL}/ain/${id}`;
+        }
+
+        try {
+            const res = await fetch(url, { method: 'DELETE' });
+            if(res.ok) {
+                type === 'main' ? loadRecords() : loadCollectionRecords();
+            } else {
+                alert("ডিলিট করতে সমস্যা হয়েছে। শিট কানেকশন চেক করুন।");
+            }
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     function logout() { localStorage.removeItem('customsUser'); location.reload(); }
