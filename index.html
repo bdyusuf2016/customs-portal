@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customs Pro | Filter & Edit Edition</title>
+    <title>Customs Pro | Ultimate Edition</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
@@ -13,40 +13,46 @@
         }
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--bg); margin: 0; padding-bottom: 50px; }
         #dashboard { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         
-        /* Stats & Cards */
+        /* Tab Bar */
+        .tab-bar { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+        .tab-btn { padding: 12px 25px; border: none; cursor: pointer; background: #e0e0e0; border-radius: 8px 8px 0 0; font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Header & Stats */
+        .header { display: flex; justify-content: space-between; align-items: center; background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .stat-card { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; }
         .stat-card b { font-size: 20px; color: #ffc107; display: block; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; }
-
-        /* Filter & Form Styles */
-        .filter-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: var(--card-shadow); margin-bottom: 20px; }
         input, select { padding: 10px; border: 1px solid #dadce0; border-radius: 8px; width: 100%; box-sizing: border-box; }
         
-        /* Table Styles */
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; }
+        /* Table & Buttons */
+        table { width: 100%; border-collapse: collapse; background: white; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; font-size: 13px; }
-        th { background: #f1f3f4; font-weight: 600; color: #5f6368; }
-        tr:hover { background: #f8f9fa; }
-        
-        /* Buttons */
-        .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
+        th { background: #f1f3f4; color: #5f6368; }
+        .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
         .btn-pay { background: #e8f0fe; color: var(--primary); border: 1px solid var(--primary); }
-        .btn-edit { background: #fff7e0; color: #f57c00; border: 1px solid #ffe0b2; }
+        .btn-edit { background: #fff7e0; color: #f57c00; }
         .btn-del { background: #fce8e6; color: var(--danger); }
-        .btn-save { background: var(--success); color: white; width: 100%; justify-content: center; font-size: 15px; }
+        .btn-save { background: var(--success); color: white; width: 100%; justify-content: center; }
+        
+        .status-paid { color: var(--success); background: #e6f4ea; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .status-pending { color: var(--danger); background: #fce8e6; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
         
         #selectionSummary { background: #fffde7; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; border: 1px solid #fff59d; }
 
-        @media print { .no-print, .header, .card, .filter-bar, #selectionSummary { display: none !important; } #dashboard { display: block !important; } table { width: 100%; border: 1px solid black; } }
+        @media print { .no-print { display: none !important; } #dashboard { display: block !important; } }
     </style>
 </head>
 <body>
 
 <div id="loginScreen" style="height:100vh; display:flex; justify-content:center; align-items:center;">
-    <div style="text-align:center;" class="card">
+    <div class="card" style="text-align:center; width:300px;">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="40" style="margin-bottom:15px;">
         <h2>Customs Pro Login</h2>
         <div id="g_id_signin"></div>
     </div>
@@ -55,8 +61,8 @@
 <div id="dashboard">
     <div class="header no-print">
         <div style="display:flex; align-items:center; gap:10px;">
-            <img id="userImg" style="width:40px; border-radius:50%;">
-            <b id="userName"></b>
+            <img id="userImg" style="width:40px; border-radius:50%; border:2px solid var(--primary);">
+            <div id="userName" style="font-weight:bold;"></div>
         </div>
         <div style="display:flex; gap:10px;">
             <button class="btn" style="background:white; border:1px solid #ddd;" onclick="window.print()"><i class="fas fa-print"></i> Report</button>
@@ -64,47 +70,73 @@
         </div>
     </div>
 
-    <div class="stats-grid no-print">
-        <div class="stat-card">Total Duty <b id="statDuty">0.00</b></div>
-        <div class="stat-card">Cash Rec. <b id="statCash">0.00</b></div>
-        <div class="stat-card">Profit <b id="statProfit">0.00</b></div>
+    <div class="tab-bar no-print">
+        <button class="tab-btn active" onclick="openTab('beRecords', this)"><i class="fas fa-file-invoice"></i> B/E Records</button>
+        <button class="tab-btn" onclick="openTab('beCollection', this)"><i class="fas fa-hand-holding-dollar"></i> Cash Collection</button>
     </div>
 
-    <div class="card no-print">
-        <form id="beForm" onsubmit="saveRecord(event)">
-            <input type="hidden" id="editBeNo">
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:10px;">
-                <input type="text" id="ain" placeholder="AIN No" oninput="autoFill(this.value)" required>
-                <input type="text" id="declarant" placeholder="Name" readonly style="background:#f1f3f4;">
-                <input type="text" id="beNo" placeholder="B/E No" required>
-                <input type="number" id="duty" placeholder="Duty Amt" step="any" required>
-            </div>
-            <button type="submit" id="saveBtn" class="btn btn-save"><i class="fas fa-save"></i> Save B/E Record</button>
-        </form>
+    <div id="beRecords" class="tab-content active">
+        <div class="stats-grid no-print">
+            <div class="stat-card">Total Duty <b id="statDuty">0.00</b></div>
+            <div class="stat-card">Net Profit <b id="statProfit">0.00</b></div>
+        </div>
+
+        <div class="card no-print">
+            <form id="beForm" onsubmit="saveRecord(event)">
+                <input type="hidden" id="editBeNo">
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:10px;">
+                    <input type="text" id="ain" placeholder="AIN No" oninput="autoFill(this.value)" required>
+                    <input type="text" id="declarant" placeholder="Name" readonly style="background:#f1f3f4;">
+                    <input type="text" id="beNo" placeholder="B/E No" required>
+                    <input type="number" id="duty" placeholder="Duty Amt" step="any" required>
+                </div>
+                <button type="submit" id="saveBtn" class="btn btn-save"><i class="fas fa-save"></i> Save B/E Record</button>
+            </form>
+        </div>
+
+        <div class="filter-bar no-print" style="display:flex; gap:10px; margin-bottom:15px;">
+            <input type="text" id="searchAin" placeholder="Search AIN/BE..." onkeyup="filterTable()">
+            <select id="userFilter" onchange="filterTable()" style="width:200px;"><option value="all">All Users</option></select>
+        </div>
+
+        <div id="selectionSummary" class="no-print">
+            <span>Selected: <b id="selCount">0</b> | Duty: <b id="selDuty">0.00</b></span>
+            <button class="btn btn-pay" style="background:var(--primary); color:white; margin-left:15px;" onclick="bulkPay()">Bulk Pay</button>
+        </div>
+
+        <div class="card" style="padding:0; overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="no-print"><input type="checkbox" onclick="toggleSelectAll(this)"></th>
+                        <th>Date</th><th>AIN/BE</th><th>Duty</th><th>Cash</th><th>Status</th><th class="no-print">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
     </div>
 
-    <div class="filter-bar no-print">
-        <input type="text" id="searchAin" placeholder="Search AIN..." onkeyup="filterTable()">
-        <select id="userFilter" onchange="filterTable()">
-            <option value="all">All Users</option>
-        </select>
-    </div>
-
-    <div id="selectionSummary">
-        <span>Selected: <b id="selCount">0</b> | Total Duty: <b id="selDuty">0.00</b></span>
-        <button class="btn" style="background:var(--primary); color:white; margin-left:15px;" onclick="bulkPay()">Bulk Pay</button>
-    </div>
-
-    <div class="card" style="padding:0; overflow-x:auto;">
-        <table>
-            <thead>
-                <tr>
-                    <th class="no-print"><input type="checkbox" onclick="toggleSelectAll(this)"></th>
-                    <th>Date</th><th>Declarant</th><th>AIN/BE</th><th>Duty</th><th>Cash</th><th>Profit</th><th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-        </table>
+    <div id="beCollection" class="tab-content">
+        <div class="card no-print">
+            <h3>Add New Collection</h3>
+            <form id="colForm" onsubmit="saveCollection(event)" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:10px;">
+                <input type="text" id="colAin" placeholder="AIN" required>
+                <input type="number" id="colQty" placeholder="B/E Qty" required>
+                <input type="number" id="colTotal" placeholder="Total Amount" required>
+                <input type="number" id="colDisc" placeholder="Discount" value="0">
+                <select id="colMethod"><option>Cash</option><option>Bkash</option><option>Bank</option></select>
+                <button type="submit" class="btn btn-save">Add Entry</button>
+            </form>
+        </div>
+        <div class="card" style="padding:0; overflow-x:auto;">
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>AIN</th><th>Qty</th><th>Total</th><th>Disc</th><th>Net</th><th>Method</th><th>Action</th></tr>
+                </thead>
+                <tbody id="colTableBody"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -132,80 +164,63 @@
         document.getElementById('userImg').src = currentUser.picture;
         fetch(API_URL + "?sheet=AIN_List").then(r => r.json()).then(d => ainData = d);
         loadRecords();
+        loadCollections();
     }
 
-    function autoFill(v) {
-        const f = ainData.find(i => String(i.ain) === v.trim());
-        document.getElementById('declarant').value = f ? f.name : "Not Found";
+    function openTab(tabId, el) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        el.classList.add('active');
     }
 
     async function loadRecords() {
         const res = await fetch(API_URL);
         allRecords = await res.json();
         renderTable(allRecords);
-        updateFilters();
+        updateUserFilter();
     }
 
     function renderTable(data) {
         const tbody = document.getElementById('tableBody');
-        let dSum = 0, cSum = 0, pSum = 0;
-
+        let dSum = 0, pSum = 0;
         tbody.innerHTML = data.slice().reverse().map(item => {
             const duty = parseFloat(item.duty || 0);
             const cash = parseFloat(item.cash || 0);
-            const profit = (cash > 0) ? (cash - duty) : 0;
-            
-            dSum += duty; cSum += cash; pSum += profit;
+            const isPaid = item.status === 'Paid';
+            dSum += duty; if(isPaid) pSum += (cash - duty);
 
             return `<tr>
                 <td class="no-print"><input type="checkbox" class="row-check" data-duty="${duty}" data-be="${item.beNo}" onclick="updateSum()"></td>
-                <td>${item.date}</td><td>${item.name || ''}</td>
-                <td><b>${item.ain}</b><br>${item.beNo}</td>
+                <td>${item.date}</td><td><b>${item.ain}</b><br>${item.beNo}</td>
                 <td>${duty.toFixed(2)}</td><td>${cash.toFixed(2)}</td>
-                <td style="color:${profit>0?'green':'inherit'}; font-weight:bold">${profit.toFixed(2)}</td>
+                <td><span class="${isPaid ? 'status-paid' : 'status-pending'}">${item.status || 'Pending'}</span></td>
                 <td class="no-print">
                     <div style="display:flex; gap:5px; justify-content:center;">
-                        ${cash == 0 ? `<button class="btn btn-pay" onclick="paySingle('${item.beNo}', ${duty})">Pay</button>` : ''}
+                        ${!isPaid ? `<button class="btn btn-pay" onclick="paySingle('${item.beNo}', ${duty})">Pay</button>` : ''}
                         <button class="btn btn-edit" onclick="editRecord('${item.beNo}')"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-del" onclick="deleteRecord('${item.beNo}')"><i class="fas fa-trash"></i></button>
+                        <button class="btn btn-del" onclick="deleteData('${item.beNo}', 'main')"><i class="fas fa-trash"></i></button>
                     </div>
                 </td>
             </tr>`;
         }).join('');
         document.getElementById('statDuty').innerText = dSum.toFixed(2);
-        document.getElementById('statCash').innerText = cSum.toFixed(2);
         document.getElementById('statProfit').innerText = pSum.toFixed(2);
     }
 
     async function saveRecord(e) {
         e.preventDefault();
-        const editId = document.getElementById('editBeNo').value;
         const payload = {
             ain: document.getElementById('ain').value,
             name: document.getElementById('declarant').value,
             beNo: document.getElementById('beNo').value,
             duty: document.getElementById('duty').value,
-            user: currentUser.email
+            user: currentUser.email,
+            date: new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
+            status: 'Pending', cash: 0
         };
-
-        if(editId) {
-            await fetch(`${API_URL}/beNo/${editId}`, { method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)});
-        } else {
-            payload.date = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
-            payload.status = 'Pending'; payload.cash = 0;
-            await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({data: [payload]})});
-        }
-        location.reload();
-    }
-
-    function editRecord(beNo) {
-        const item = allRecords.find(r => r.beNo === beNo);
-        document.getElementById('editBeNo').value = item.beNo;
-        document.getElementById('ain').value = item.ain;
-        document.getElementById('beNo').value = item.beNo;
-        document.getElementById('duty').value = item.duty;
-        document.getElementById('saveBtn').innerHTML = '<i class="fas fa-sync"></i> Update Record';
-        window.scrollTo(0,0);
+        await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({data: [payload]})});
+        loadRecords(); e.target.reset();
     }
 
     async function paySingle(beNo, duty) {
@@ -216,6 +231,12 @@
         loadRecords();
     }
 
+    // --- অন্যান্য ফাংশন (Delete, AutoFill, Filters) ---
+    function autoFill(v) {
+        const f = ainData.find(i => String(i.ain) === v.trim());
+        document.getElementById('declarant').value = f ? f.name : "Not Found";
+    }
+
     function toggleSelectAll(el) {
         document.querySelectorAll('.row-check').forEach(c => c.checked = el.checked);
         updateSum();
@@ -223,28 +244,18 @@
 
     function updateSum() {
         const sel = document.querySelectorAll('.row-check:checked');
-        let d = 0;
-        sel.forEach(s => d += parseFloat(s.dataset.duty));
+        let d = 0; sel.forEach(s => d += parseFloat(s.dataset.duty));
         document.getElementById('selCount').innerText = sel.length;
         document.getElementById('selDuty').innerText = d.toFixed(2);
         document.getElementById('selectionSummary').style.display = sel.length > 0 ? 'flex' : 'none';
     }
 
-    function filterTable() {
-        const search = document.getElementById('searchAin').value.toLowerCase();
-        const user = document.getElementById('userFilter').value;
-        const filtered = allRecords.filter(r => (r.ain.includes(search)) && (user === 'all' || r.user === user));
-        renderTable(filtered);
-    }
-
-    function updateFilters() {
-        const users = [...new Set(allRecords.map(r => r.user))];
-        const select = document.getElementById('userFilter');
-        users.forEach(u => select.innerHTML += `<option value="${u}">${u.split('@')[0]}</option>`);
-    }
-
-    async function deleteRecord(id) {
-        if(confirm("Delete B/E: " + id + "?")) { await fetch(`${API_URL}/beNo/${id}`, { method: 'DELETE' }); loadRecords(); }
+    async function deleteData(id, type) {
+        if(confirm("Delete?")) {
+            const url = type === 'main' ? `${API_URL}/beNo/${id}` : `${API_URL}/ain/${id}?sheet=AIN_Summary`;
+            await fetch(url, { method: 'DELETE' });
+            type === 'main' ? loadRecords() : loadCollections();
+        }
     }
 
     function logout() { localStorage.removeItem('customsUser'); location.reload(); }
