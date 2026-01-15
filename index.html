@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customs Pro | Extended Edition</title>
+    <title>Customs Pro | Final Edition</title>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
@@ -15,29 +15,26 @@
         .login-card { padding: 40px; border-radius: 16px; box-shadow: var(--card-shadow); text-align: center; width: 320px; }
         #dashboard { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
         
-        /* Tab Navigation */
-        .tab-bar { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 5px; }
-        .tab-item { padding: 10px 20px; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; background: #e0e0e0; border: none; }
-        .tab-item.active { background: var(--primary); color: white; }
-        .tab-pane { display: none; }
-        .tab-pane.active { display: block; }
+        /* Tab Styling */
+        .tab-bar { display: flex; gap: 5px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+        .tab-btn { padding: 10px 20px; border: none; cursor: pointer; background: #e0e0e0; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
         .header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .user-profile { display: flex; align-items: center; gap: 10px; }
         .user-profile img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary); }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; }
-        .stat-card b { font-size: 20px; color: #ffc107; display: block; }
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
         input, select { padding: 10px; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
         .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .btn-save { background: var(--success); color: white; width: 100%; }
-        table { width: 100%; border-collapse: collapse; font-size: 13px; background: white; }
-        th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
+        .btn-save { background: var(--success); color: white; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f1f3f4; color: #5f6368; }
-        .status-paid { color: var(--success); font-weight: bold; }
-        .status-pending { color: var(--danger); font-weight: bold; }
+        .status-paid { background: #e6f4ea; color: #1e8e3e; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
+        .status-pending { background: #fce8e6; color: #d93025; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
         @media print { .no-print { display: none !important; } #dashboard { display: block !important; } }
     </style>
 </head>
@@ -57,86 +54,56 @@
             <img id="userImg" src="">
             <div><b id="userName"></b><br><small id="userEmail"></small></div>
         </div>
-        <div class="no-print">
-            <button class="btn" style="background:#eee;" onclick="logout()">Logout</button>
-        </div>
+        <button class="btn" style="background:#eee;" onclick="logout()">Logout</button>
     </div>
 
     <div class="tab-bar no-print">
-        <button class="tab-item active" onclick="showTab('mainSection', this)">B/E Records</button>
-        <button class="tab-item" onclick="showTab('summarySection', this)">AIN Summary (Discount)</button>
+        <button class="tab-btn active" onclick="openTab('mainTab', this)">B/E Records</button>
+        <button class="tab-btn" onclick="openTab('collectionTab', this)">Cash Collection (Discount)</button>
     </div>
 
-    <div id="mainSection" class="tab-pane active">
-        <div class="stats-grid">
-            <div class="stat-card">Records <b id="statMine">0</b></div>
-            <div class="stat-card">Total Duty <b id="statDuty">0.00</b></div>
-            <div class="stat-card">Cash Received <b id="statCash">0.00</b></div>
-            <div class="stat-card">Net Profit <b id="statProfit">0.00</b></div>
-        </div>
-
-        <div class="card no-print">
-            <div class="form-grid">
-                <input type="date" id="startDate" onchange="applyAllFilters()">
-                <input type="date" id="endDate" onchange="applyAllFilters()">
-                <select id="methodFilter" onchange="applyAllFilters()">
-                    <option value="all">All Methods</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Bank">Bank</option>
-                    <option value="bkashpay">bKash Payment</option>
-                </select>
-                <input type="text" id="searchBox" placeholder="Search B/E or AIN..." onkeyup="textFilter()">
-            </div>
-        </div>
-
+    <div id="mainTab" class="tab-content active">
         <div class="card no-print">
             <form id="beForm" class="form-grid">
-                <input type="text" id="ain" placeholder="AIN No" oninput="handleAINAutoFill('ain', 'declarant')" required>
+                <input type="text" id="ain" placeholder="AIN No" oninput="autoFill('ain', 'declarant')" required>
                 <input type="text" id="declarant" placeholder="Declarant Name" readonly style="background:#f1f3f4;">
                 <input type="text" id="beNo" placeholder="B/E No" required>
                 <input type="number" id="duty" placeholder="Duty Amt" step="any" required>
-                <input type="number" id="cashReceived" placeholder="Cash Rec." step="any">
-                <select id="method">
-                    <option value="Cash">Cash</option>
-                    <option value="Bank">Bank</option>
-                </select>
                 <button type="submit" class="btn btn-save">Save Record</button>
             </form>
         </div>
-
         <div class="card" style="padding:0; overflow-x: auto;">
             <table id="reportTable">
                 <thead>
-                    <tr><th>Date</th><th>User</th><th>Declarant</th><th>AIN/BE</th><th>Duty</th><th>Cash</th><th>Profit</th><th>Status</th><th>Action</th></tr>
+                    <tr><th>Date</th><th>AIN/BE</th><th>Declarant</th><th>Duty</th><th>Status</th><th class="no-print">Action</th></tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
         </div>
     </div>
 
-    <div id="summarySection" class="tab-pane">
+    <div id="collectionTab" class="tab-content">
         <div class="card no-print">
-            <h3>AIN wise Bulk Collection with Discount</h3>
-            <form id="summaryForm" class="form-grid">
-                <input type="text" id="sumAin" placeholder="AIN No" oninput="handleAINAutoFill('sumAin', 'sumDeclarant')" required>
-                <input type="text" id="sumDeclarant" placeholder="Declarant Name" readonly style="background:#f1f3f4;">
-                <input type="number" id="sumBeCount" placeholder="B/E Count" required>
-                <input type="number" id="sumTotalAmt" placeholder="Total Amount" required>
-                <input type="number" id="sumDiscount" placeholder="Discount Amt" value="0">
-                <select id="sumMethod">
-                    <option value="Cash">Cash (ক্যাশ)</option>
+            <h3>Collection with Discount</h3>
+            <form id="collectionForm" class="form-grid">
+                <input type="text" id="colAin" placeholder="AIN No" oninput="autoFill('colAin', 'colDeclarant')" required>
+                <input type="text" id="colDeclarant" placeholder="Declarant Name" readonly style="background:#f1f3f4;">
+                <input type="number" id="beCount" placeholder="B/E Count" required>
+                <input type="number" id="totalAmt" placeholder="Total Amount" required>
+                <input type="number" id="discount" placeholder="Discount Amount" value="0">
+                <select id="payMethod">
+                    <option value="Cash">Cash (নগদ)</option>
                     <option value="Due">Due (বকেয়া)</option>
                 </select>
-                <button type="submit" class="btn btn-save" style="background:var(--primary);">Save Summary</button>
+                <button type="submit" class="btn btn-save" style="background:var(--primary);">Save Collection</button>
             </form>
         </div>
-
         <div class="card" style="padding:0; overflow-x: auto;">
-            <table id="summaryTable">
+            <table>
                 <thead>
-                    <tr><th>Date</th><th>AIN</th><th>Declarant Name</th><th>Qty</th><th>Total</th><th>Disc.</th><th>Net Amt</th><th>Method</th><th>Action</th></tr>
+                    <tr><th>Date</th><th>AIN</th><th>Declarant</th><th>Qty</th><th>Total</th><th>Disc.</th><th>Net</th><th>Method</th><th class="no-print">Action</th></tr>
                 </thead>
-                <tbody id="summaryTableBody"></tbody>
+                <tbody id="collectionTableBody"></tbody>
             </table>
         </div>
     </div>
@@ -146,11 +113,10 @@
     const CLIENT_ID = "892484000034-a40kgtia2ne0j8g9j42g8jspvou957i7.apps.googleusercontent.com";
     const API_URL = "https://sheetdb.io/api/v1/vont79v8eejj0";
     const AIN_URL = API_URL + "?sheet=AIN_List";
-    const SUMMARY_URL = API_URL + "?sheet=AIN_Summary"; // এই নামে একটি শিট থাকতে হবে
+    const SUMMARY_URL = API_URL + "?sheet=AIN_Summary";
 
     let currentUser = null;
     let ainDatabase = [];
-    let allRecords = [];
 
     window.onload = function () {
         const savedUser = localStorage.getItem('customsUser');
@@ -161,14 +127,7 @@
         }
     }
 
-    function showTab(id, btn) {
-        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.tab-item').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        btn.classList.add('active');
-    }
-
-    async function onLogin(response) {
+    function onLogin(response) {
         currentUser = JSON.parse(atob(response.credential.split('.')[1]));
         localStorage.setItem('customsUser', JSON.stringify(currentUser));
         showDashboard();
@@ -178,101 +137,103 @@
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         document.getElementById('userName').innerText = currentUser.name;
+        document.getElementById('userEmail').innerText = currentUser.email;
         document.getElementById('userImg').src = currentUser.picture;
-        loadRecords();
-        loadSummaryRecords();
+        
         fetch(AIN_URL).then(res => res.json()).then(data => ainDatabase = data);
+        loadMainRecords();
+        loadCollectionRecords();
     }
 
-    function handleAINAutoFill(ainInputId, nameInputId) {
-        const val = document.getElementById(ainInputId).value.trim();
-        const found = ainDatabase.find(item => String(item.ain).trim() === val);
-        document.getElementById(nameInputId).value = found ? found.name : "Not Found";
+    function openTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
     }
 
-    // --- Main Records Logic (Existing) ---
-    async function loadRecords() {
+    function autoFill(ainId, nameId) {
+        const val = document.getElementById(ainId).value.trim();
+        const found = ainDatabase.find(i => String(i.ain).trim() === val);
+        document.getElementById(nameId).value = found ? found.name : "Not Found";
+    }
+
+    // --- Original Logic ---
+    async function loadMainRecords() {
         const res = await fetch(API_URL);
-        allRecords = await res.json();
-        renderTable(allRecords);
-    }
-
-    function renderTable(data) {
+        const data = await res.json();
         const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
-        data.slice().reverse().forEach(item => {
-            const duty = parseFloat(item.duty || 0);
-            const cash = parseFloat(item.cash || 0);
-            const profit = parseFloat(item.profit || 0);
-            tbody.innerHTML += `
-                <tr>
-                    <td>${item.date}</td>
-                    <td><small>${item.user.split('@')[0]}</small></td>
-                    <td>${item.name || ''}</td>
-                    <td><b>${item.ain}</b><br>${item.beNo}</td>
-                    <td>${duty.toFixed(2)}</td>
-                    <td>${cash.toFixed(2)}</td>
-                    <td style="color:${profit < 0 ? 'red' : 'green'};">${profit.toFixed(2)}</td>
-                    <td class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</td>
-                    <td class="no-print"><button onclick="deleteRecord('${item.beNo}', 'main')">Del</button></td>
-                </tr>`;
-        });
+        tbody.innerHTML = data.slice().reverse().map(item => `
+            <tr>
+                <td>${item.date}</td>
+                <td><b>${item.ain}</b><br>${item.beNo}</td>
+                <td>${item.name || ''}</td>
+                <td>${item.duty}</td>
+                <td><span class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</span></td>
+                <td class="no-print"><button onclick="deleteData('${item.beNo}', 'main')">Del</button></td>
+            </tr>`).join('');
     }
 
     document.getElementById('beForm').onsubmit = async (e) => {
         e.preventDefault();
-        const duty = parseFloat(document.getElementById('duty').value);
-        const cash = parseFloat(document.getElementById('cashReceived').value || 0);
-        const payload = {
+        const payload = { 
             date: new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
             user: currentUser.email, ain: document.getElementById('ain').value,
             name: document.getElementById('declarant').value, beNo: document.getElementById('beNo').value,
-            duty: duty, cash: cash, profit: (cash - duty).toFixed(2),
-            status: cash > 0 ? 'Paid' : 'Pending', method: document.getElementById('method').value
+            duty: document.getElementById('duty').value, status: 'Pending'
         };
         await fetch(API_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [payload] }) });
-        loadRecords(); e.target.reset();
+        loadMainRecords(); e.target.reset();
     };
 
-    // --- New Summary Logic ---
-    async function loadSummaryRecords() {
+    // --- New Collection Logic ---
+    async function loadCollectionRecords() {
         const res = await fetch(SUMMARY_URL);
         const data = await res.json();
-        const tbody = document.getElementById('summaryTableBody');
-        tbody.innerHTML = data.slice().reverse().map(item => {
-            const net = parseFloat(item.totalAmount) - parseFloat(item.discount);
-            return `<tr>
+        const tbody = document.getElementById('collectionTableBody');
+        tbody.innerHTML = data.slice().reverse().map(item => `
+            <tr>
                 <td>${item.date}</td><td>${item.ain}</td><td>${item.name}</td>
                 <td>${item.beCount}</td><td>${item.totalAmount}</td>
                 <td style="color:red;">-${item.discount}</td>
-                <td style="font-weight:bold; color:green;">${net.toFixed(2)}</td>
-                <td><span class="badge">${item.method}</span></td>
-                <td><button onclick="deleteRecord('${item.ain}', 'summary')">Del</button></td>
-            </tr>`;
-        }).join('');
+                <td style="font-weight:bold;">${item.netAmount}</td>
+                <td><b>${item.method}</b></td>
+                <td class="no-print"><button onclick="deleteData('${item.ain}', 'summary')">Del</button></td>
+            </tr>`).join('');
     }
 
-    document.getElementById('summaryForm').onsubmit = async (e) => {
+    document.getElementById('collectionForm').onsubmit = async (e) => {
         e.preventDefault();
+        const total = parseFloat(document.getElementById('totalAmt').value);
+        const disc = parseFloat(document.getElementById('discount').value || 0);
+        const net = total - disc;
+
         const payload = {
             date: new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
-            ain: document.getElementById('sumAin').value,
-            name: document.getElementById('sumDeclarant').value,
-            beCount: document.getElementById('sumBeCount').value,
-            totalAmount: document.getElementById('sumTotalAmt').value,
-            discount: document.getElementById('sumDiscount').value,
-            method: document.getElementById('sumMethod').value,
+            ain: document.getElementById('colAin').value,
+            name: document.getElementById('colDeclarant').value,
+            beCount: document.getElementById('beCount').value,
+            totalAmount: total,
+            discount: disc,
+            netAmount: net.toFixed(2),
+            method: document.getElementById('payMethod').value,
             user: currentUser.email
         };
+
+        const btn = e.target.querySelector('button');
+        btn.innerText = "Saving..."; btn.disabled = true;
+
         await fetch(SUMMARY_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [payload] }) });
-        loadSummaryRecords(); e.target.reset();
+        
+        btn.innerText = "Save Collection"; btn.disabled = false;
+        loadCollectionRecords(); e.target.reset();
     };
 
-    async function deleteRecord(id, type) {
-        if(!confirm("Confirm Delete?")) return;
+    async function deleteData(id, type) {
+        if(!confirm("Delete this?")) return;
         const url = type === 'main' ? `${API_URL}/beNo/${id}` : `${SUMMARY_URL}/ain/${id}`;
         await fetch(url, { method: 'DELETE' });
-        type === 'main' ? loadRecords() : loadSummaryRecords();
+        type === 'main' ? loadMainRecords() : loadCollectionRecords();
     }
 
     function logout() { localStorage.removeItem('customsUser'); location.reload(); }
