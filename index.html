@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customs Pro | Final Fixed Edition</title>
+    <title>Customs Pro | Master Edition</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
@@ -16,86 +16,88 @@
         .login-card { padding: 40px; border-radius: 16px; box-shadow: var(--card-shadow); text-align: center; width: 320px; }
         #dashboard { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
         
+        /* Tab & Layout */
         .tab-bar { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid #ddd; }
         .tab-btn { padding: 10px 20px; border: none; cursor: pointer; background: #e0e0e0; border-radius: 8px 8px 0 0; font-weight: bold; }
         .tab-btn.active { background: var(--primary); color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .user-profile { display: flex; align-items: center; gap: 10px; }
-        .user-profile img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary); }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 20px; }
         
+        /* Stats */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .stat-card { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; }
         .stat-card b { font-size: 18px; color: #ffc107; display: block; }
 
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
-        input, select { padding: 10px; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
-        
-        .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
-        .btn-save { background: var(--success); color: white; width: 100%; justify-content: center; }
-        .btn-pay { background: #e8f0fe; color: var(--primary); }
-        .btn-del { background: #fce8e6; color: var(--danger); }
-
+        /* Tables & Buttons */
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th, td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f1f3f4; color: #5f6368; }
+        tr.selected-row { background-color: #e8f0fe !important; }
+        .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        .btn-pay { background: var(--primary); color: white; }
+        .btn-del { background: #fce8e6; color: var(--danger); }
         .status-paid { color: #1e8e3e; background: #e6f4ea; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
         .status-pending { color: #d93025; background: #fce8e6; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
-        
-        @media print { .no-print { display: none !important; } #dashboard { display: block !important; } }
+
+        /* Selection Summary Bar */
+        #selectionSummary { background: #fffde7; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; border: 1px solid #fff59d; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 10% auto; padding: 25px; border-radius: 12px; width: 320px; box-shadow: var(--card-shadow); }
     </style>
 </head>
 <body>
 
+<div id="paymentModal" class="modal">
+    <div class="modal-content">
+        <h3>Bulk Payment</h3>
+        <p>নির্বাচিত বি/ই সংখ্যা: <b id="modalCount">0</b></p>
+        <label>Payment Method:</label>
+        <select id="bulkMethod" style="width:100%; padding:10px; margin:10px 0;">
+            <option value="Cash">Cash</option>
+            <option value="Bkash">Bkash</option>
+            <option value="Bank">Bank Transfer</option>
+        </select>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button class="btn btn-pay" onclick="processBulkPay()">Confirm</button>
+            <button class="btn" style="background:#eee;" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <div id="loginScreen">
     <div class="login-card">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="48">
-        <h2>Customs Portal</h2>
+        <h2>Customs Pro</h2>
         <div id="g_id_signin"></div>
     </div>
 </div>
 
 <div id="dashboard">
-    <div class="header no-print">
-        <div class="user-profile">
-            <img id="userImg" src="">
-            <div><b id="userName"></b><br><small id="userEmail"></small></div>
-        </div>
-        <div>
-            <button class="btn btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
-            <button class="btn" style="background:#eee;" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
-        </div>
-    </div>
-
     <div class="tab-bar no-print">
-        <button class="tab-btn active" onclick="openTab('mainTab', this)"><i class="fas fa-list"></i> B/E Records</button>
-        <button class="tab-btn" onclick="openTab('collectionTab', this)"><i class="fas fa-hand-holding-dollar"></i> Cash Collection</button>
+        <button class="tab-btn active" onclick="openTab('mainTab', this)">B/E Records</button>
+        <button class="tab-btn" onclick="openTab('collectionTab', this)">Cash Collection</button>
     </div>
 
     <div id="mainTab" class="tab-content active">
         <div class="stats-grid">
-            <div class="stat-card">Records <b id="statMine">0</b></div>
             <div class="stat-card">Total Duty <b id="statDuty">0.00</b></div>
-            <div class="stat-card">Profit <b id="statProfit" style="color:#00ff00;">0.00</b></div>
+            <div class="stat-card">Net Profit <b id="statProfit" style="color:#00ff00;">0.00</b></div>
         </div>
 
-        <div class="card no-print">
-            <form id="beForm" class="form-grid">
-                <input type="text" id="ain" placeholder="AIN No" oninput="autoFill('ain', 'declarant')" required>
-                <input type="text" id="declarant" placeholder="Declarant Name" readonly style="background:#f1f3f4;">
-                <input type="text" id="beNo" placeholder="B/E No" required>
-                <input type="number" id="duty" placeholder="Duty Amt" step="any" required>
-                <button type="submit" class="btn btn-save"><i class="fas fa-save"></i> Save</button>
-            </form>
+        <div id="selectionSummary">
+            <span>নির্বাচিত: <b id="selectedCount">0</b> | মোট ডিউটি: <b id="selectedDutyTotal">0.00</b></span>
+            <button class="btn btn-pay" style="margin-left:20px;" onclick="openPaymentModal()">Bulk Pay</button>
         </div>
 
         <div class="card" style="padding:0; overflow-x: auto;">
             <table>
                 <thead>
-                    <tr><th>Date</th><th>Declarant</th><th>AIN/BE</th><th>Duty</th><th>Cash</th><th>Status</th><th class="no-print">Action</th></tr>
+                    <tr>
+                        <th class="no-print"><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
+                        <th>Date</th><th>AIN/BE</th><th>Duty</th><th>Cash</th><th>Status</th><th class="no-print">Action</th>
+                    </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
@@ -103,49 +105,23 @@
     </div>
 
     <div id="collectionTab" class="tab-content">
-        <div class="stats-grid">
-            <div class="stat-card">Total Entries <b id="sumCount">0</b></div>
-            <div class="stat-card">Net Rec. <b id="sumNet">0.00</b></div>
-        </div>
-
-        <div class="card no-print">
-            <form id="collectionForm" class="form-grid">
-                <input type="text" id="colAin" placeholder="AIN No" oninput="autoFill('colAin', 'colDeclarant')" required>
-                <input type="text" id="colDeclarant" placeholder="Declarant Name" readonly style="background:#f1f3f4;">
-                <input type="number" id="beCount" placeholder="B/E Count" required>
-                <input type="number" id="totalAmt" placeholder="Total Amount" required>
-                <input type="number" id="discount" placeholder="Discount Amt" value="0">
-                <select id="payMethod">
-                    <option value="Cash">Cash</option>
-                    <option value="Bkash">Bkash</option>
-                    <option value="Bank">Bank</option>
-                </select>
-                <button type="submit" class="btn btn-save"><i class="fas fa-plus"></i> Add Entry</button>
-            </form>
-        </div>
-
-        <div class="card" style="padding:0; overflow-x: auto;">
-            <table>
-                <thead>
-                    <tr><th>Date</th><th>AIN</th><th>Declarant</th><th>Qty</th><th>Net Amount</th><th>Method</th><th class="no-print">Action</th></tr>
-                </thead>
-                <tbody id="collectionTableBody"></tbody>
-            </table>
+        <div class="card">
+            <h3>Cash Collection Summary</h3>
+            <div id="collectionTableContainer"></div>
         </div>
     </div>
 </div>
 
 <script>
     const API_URL = "https://sheetdb.io/api/v1/vont79v8eejj0";
-    const SUMMARY_URL = API_URL + "?sheet=AIN_Summary";
-    let currentUser = null, allRecords = [], summaryRecords = [], ainDatabase = [];
+    let currentUser = null, allRecords = [];
 
     window.onload = function () {
         const savedUser = localStorage.getItem('customsUser');
         if (savedUser) { currentUser = JSON.parse(savedUser); showDashboard(); } 
         else {
             google.accounts.id.initialize({ client_id: "892484000034-a40kgtia2ne0j8g9j42g8jspvou957i7.apps.googleusercontent.com", callback: onLogin });
-            google.accounts.id.renderButton(document.getElementById("g_id_signin"), { theme: "outline", size: "large", width: "320px" });
+            google.accounts.id.renderButton(document.getElementById("g_id_signin"), { theme: "outline", size: "large" });
         }
     }
 
@@ -158,26 +134,9 @@
     function showDashboard() {
         document.getElementById('loginScreen').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
-        document.getElementById('userName').innerText = currentUser.name;
-        document.getElementById('userImg').src = currentUser.picture;
-        fetch(API_URL + "?sheet=AIN_List").then(res => res.json()).then(data => ainDatabase = data);
-        loadRecords(); loadCollectionRecords();
+        loadRecords();
     }
 
-    function openTab(tabId, btn) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active'); btn.classList.add('active');
-        if(tabId === 'collectionTab') loadCollectionRecords();
-    }
-
-    function autoFill(ainId, nameId) {
-        const val = document.getElementById(ainId).value.trim();
-        const found = ainDatabase.find(i => String(i.ain).trim() === val);
-        document.getElementById(nameId).value = found ? found.name : "Not Found";
-    }
-
-    // --- Tab 1 (B/E Records) ---
     async function loadRecords() {
         const res = await fetch(API_URL);
         allRecords = await res.json();
@@ -186,68 +145,111 @@
 
     function renderMainTable(data) {
         const tbody = document.getElementById('tableBody');
-        let dutyTotal = 0, profitTotal = 0;
+        let dutySum = 0, profitSum = 0;
+
         tbody.innerHTML = data.slice().reverse().map(item => {
-            dutyTotal += parseFloat(item.duty || 0);
-            const profit = (parseFloat(item.cash || 0) - parseFloat(item.duty || 0)).toFixed(2);
-            if(item.status === 'Paid') profitTotal += parseFloat(profit);
-            return `<tr>
-                <td>${item.date}</td><td>${item.name || ''}</td><td><b>${item.ain}</b><br>${item.beNo}</td>
-                <td>${item.duty}</td><td>${item.cash || 0}</td>
+            const duty = parseFloat(item.duty || 0);
+            const cash = parseFloat(item.cash || 0);
+            dutySum += duty;
+            if(item.status === 'Paid') profitSum += (cash - duty);
+
+            return `
+            <tr data-id="${item.beNo}">
+                <td class="no-print">
+                    <input type="checkbox" class="row-check" 
+                        data-be="${item.beNo}" 
+                        data-duty="${duty}" 
+                        onclick="updateSelection()">
+                </td>
+                <td>${item.date}</td>
+                <td><b>${item.ain}</b><br>${item.beNo}</td>
+                <td>${duty.toFixed(2)}</td>
+                <td>${cash.toFixed(2)}</td>
                 <td><span class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status || 'Pending'}</span></td>
-                <td class="no-print"><button class="btn btn-del" onclick="deleteData('${item.beNo}', 'main')"><i class="fas fa-trash"></i></button></td>
+                <td class="no-print">
+                    <button class="btn btn-del" onclick="deleteData('${item.beNo}')"><i class="fas fa-trash"></i></button>
+                </td>
             </tr>`;
         }).join('');
-        document.getElementById('statMine').innerText = data.length;
-        document.getElementById('statDuty').innerText = dutyTotal.toFixed(2);
-        document.getElementById('statProfit').innerText = profitTotal.toFixed(2);
+
+        document.getElementById('statDuty').innerText = dutySum.toFixed(2);
+        document.getElementById('statProfit').innerText = profitSum.toFixed(2);
+        
+        // সিলেকশন রিসেট
+        document.getElementById('selectAll').checked = false;
+        updateSelection();
     }
 
-    // --- Tab 2 (Cash Collection) ---
-    async function loadCollectionRecords() {
-        const res = await fetch(SUMMARY_URL);
-        summaryRecords = await res.json();
-        renderSummaryTable(summaryRecords);
+    // --- Selection Logic ---
+    function toggleSelectAll() {
+        const isChecked = document.getElementById('selectAll').checked;
+        document.querySelectorAll('.row-check').forEach(cb => {
+            cb.checked = isChecked;
+            cb.closest('tr').classList.toggle('selected-row', isChecked);
+        });
+        updateSelection();
     }
 
-    function renderSummaryTable(data) {
-        const tbody = document.getElementById('collectionTableBody');
-        let netTotal = 0;
-        tbody.innerHTML = data.slice().reverse().map(item => {
-            netTotal += parseFloat(item.netAmount || 0);
-            return `<tr>
-                <td>${item.date}</td><td>${item.ain}</td><td>${item.name}</td>
-                <td>${item.beCount}</td><td>${item.netAmount}</td><td>${item.method}</td>
-                <td class="no-print"><button class="btn btn-del" onclick="deleteData('${item.ain}', 'summary')"><i class="fas fa-trash"></i></button></td>
-            </tr>`;
-        }).join('');
-        document.getElementById('sumCount').innerText = data.length;
-        document.getElementById('sumNet').innerText = netTotal.toFixed(2);
+    function updateSelection() {
+        const selected = document.querySelectorAll('.row-check:checked');
+        let totalDuty = 0;
+        selected.forEach(cb => {
+            totalDuty += parseFloat(cb.dataset.duty);
+            cb.closest('tr').classList.add('selected-row');
+        });
+        
+        // হাইলাইট হ্যান্ডলিং
+        document.querySelectorAll('.row-check:not(:checked)').forEach(cb => {
+            cb.closest('tr').classList.remove('selected-row');
+        });
+
+        document.getElementById('selectedCount').innerText = selected.length;
+        document.getElementById('selectedDutyTotal').innerText = totalDuty.toFixed(2);
+        document.getElementById('selectionSummary').style.display = selected.length > 0 ? 'flex' : 'none';
     }
 
-    document.getElementById('collectionForm').onsubmit = async (e) => {
-        e.preventDefault();
-        const t = parseFloat(document.getElementById('totalAmt').value);
-        const d = parseFloat(document.getElementById('discount').value || 0);
-        const payload = {
-            date: new Date().toLocaleDateString('en-GB').replace(/\//g, '-'),
-            ain: document.getElementById('colAin').value,
-            name: document.getElementById('colDeclarant').value,
-            beCount: document.getElementById('beCount').value,
-            totalAmount: t, discount: d, netAmount: (t - d).toFixed(2),
-            method: document.getElementById('payMethod').value,
-            user: currentUser.email
-        };
-        await fetch(SUMMARY_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ data: [payload] }) });
-        loadCollectionRecords(); e.target.reset();
-    };
+    // --- Bulk Payment Modal Logic ---
+    function openPaymentModal() {
+        const selected = document.querySelectorAll('.row-check:checked');
+        document.getElementById('modalCount').innerText = selected.length;
+        document.getElementById('paymentModal').style.display = 'block';
+    }
 
-    // --- Delete Function ---
-    async function deleteData(id, type) {
-        if(!confirm("Delete this?")) return;
-        const url = type === 'main' ? `${API_URL}/beNo/${id}` : `${API_URL}/ain/${id}?sheet=AIN_Summary`;
-        await fetch(url, { method: 'DELETE' });
-        type === 'main' ? loadRecords() : loadCollectionRecords();
+    function closeModal() {
+        document.getElementById('paymentModal').style.display = 'none';
+    }
+
+    async function processBulkPay() {
+        const selected = document.querySelectorAll('.row-check:checked');
+        const method = document.getElementById('bulkMethod').value;
+        
+        if(!confirm(selected.length + " টি রেকর্ড পেইড করতে চান?")) return;
+        
+        closeModal();
+        for(let cb of selected) {
+            const beNo = cb.dataset.be;
+            const duty = cb.dataset.duty;
+            // Bulk Pay এ আমরা ডিউটি অ্যামাউন্টকেই ক্যাশ হিসেবে ধরে প্রফিট ০ করছি।
+            await fetch(`${API_URL}/beNo/${beNo}`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ status: 'Paid', cash: duty, method: method, profit: 0 })
+            });
+        }
+        loadRecords();
+    }
+
+    async function deleteData(beNo) {
+        if(!confirm("ডিলিট করতে চান?")) return;
+        await fetch(`${API_URL}/beNo/${beNo}`, { method: 'DELETE' });
+        loadRecords();
+    }
+
+    function openTab(tabId, btn) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btn.classList.add('active');
     }
 
     function logout() { localStorage.removeItem('customsUser'); location.reload(); }
