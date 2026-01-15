@@ -16,34 +16,31 @@
         .login-card { padding: 40px; border-radius: 16px; box-shadow: var(--card-shadow); text-align: center; width: 320px; }
         #dashboard { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
         
-        /* Tab & Layout */
         .tab-bar { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid #ddd; }
         .tab-btn { padding: 10px 20px; border: none; cursor: pointer; background: #e0e0e0; border-radius: 8px 8px 0 0; font-weight: bold; }
         .tab-btn.active { background: var(--primary); color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 20px; }
         
-        /* Stats */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .stat-card { background: var(--dark); color: white; padding: 15px; border-radius: 12px; text-align: center; }
         .stat-card b { font-size: 18px; color: #ffc107; display: block; }
 
-        /* Tables & Buttons */
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th, td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f1f3f4; color: #5f6368; }
         tr.selected-row { background-color: #e8f0fe !important; }
-        .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        
+        .btn { padding: 6px 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
         .btn-pay { background: var(--primary); color: white; }
+        .btn-single-pay { background: #e8f0fe; color: var(--primary); border: 1px solid var(--primary); }
         .btn-del { background: #fce8e6; color: var(--danger); }
+        
         .status-paid { color: #1e8e3e; background: #e6f4ea; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
         .status-pending { color: #d93025; background: #fce8e6; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
 
-        /* Selection Summary Bar */
-        #selectionSummary { background: #fffde7; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; border: 1px solid #fff59d; }
+        #selectionSummary { background: #fffde7; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; border: 1px solid #fff59d; justify-content: space-between; align-items: center; }
 
-        /* Modal */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
         .modal-content { background: white; margin: 10% auto; padding: 25px; border-radius: 12px; width: 320px; box-shadow: var(--card-shadow); }
     </style>
@@ -53,12 +50,12 @@
 <div id="paymentModal" class="modal">
     <div class="modal-content">
         <h3>Bulk Payment</h3>
-        <p>নির্বাচিত বি/ই সংখ্যা: <b id="modalCount">0</b></p>
+        <p>নির্বাচিত বি/ই: <b id="modalCount">0</b></p>
         <label>Payment Method:</label>
         <select id="bulkMethod" style="width:100%; padding:10px; margin:10px 0;">
             <option value="Cash">Cash</option>
             <option value="Bkash">Bkash</option>
-            <option value="Bank">Bank Transfer</option>
+            <option value="Bank">Bank</option>
         </select>
         <div style="display:flex; gap:10px; margin-top:15px;">
             <button class="btn btn-pay" onclick="processBulkPay()">Confirm</button>
@@ -68,46 +65,35 @@
 </div>
 
 <div id="loginScreen">
-    <div class="login-card">
-        <h2>Customs Pro</h2>
-        <div id="g_id_signin"></div>
-    </div>
+    <div class="login-card"><h2>Customs Pro</h2><div id="g_id_signin"></div></div>
 </div>
 
 <div id="dashboard">
-    <div class="tab-bar no-print">
+    <div class="tab-bar">
         <button class="tab-btn active" onclick="openTab('mainTab', this)">B/E Records</button>
-        <button class="tab-btn" onclick="openTab('collectionTab', this)">Cash Collection</button>
     </div>
 
     <div id="mainTab" class="tab-content active">
         <div class="stats-grid">
             <div class="stat-card">Total Duty <b id="statDuty">0.00</b></div>
-            <div class="stat-card">Net Profit <b id="statProfit" style="color:#00ff00;">0.00</b></div>
+            <div class="stat-card">Net Profit <b id="statProfit">0.00</b></div>
         </div>
 
         <div id="selectionSummary">
-            <span>নির্বাচিত: <b id="selectedCount">0</b> | মোট ডিউটি: <b id="selectedDutyTotal">0.00</b></span>
-            <button class="btn btn-pay" style="margin-left:20px;" onclick="openPaymentModal()">Bulk Pay</button>
+            <span>Selected: <b id="selectedCount">0</b> | Duty: <b id="selectedDutyTotal">0.00</b></span>
+            <button class="btn btn-pay" onclick="openPaymentModal()"><i class="fas fa-check-double"></i> Bulk Pay</button>
         </div>
 
-        <div class="card" style="padding:0; overflow-x: auto;">
+        <div class="card" style="padding:0; overflow-x: auto; background: white; border-radius: 12px;">
             <table>
                 <thead>
                     <tr>
-                        <th class="no-print"><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
-                        <th>Date</th><th>AIN/BE</th><th>Duty</th><th>Cash</th><th>Status</th><th class="no-print">Action</th>
+                        <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
+                        <th>Date</th><th>AIN/BE</th><th>Duty</th><th>Cash</th><th>Status</th><th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody"></tbody>
             </table>
-        </div>
-    </div>
-
-    <div id="collectionTab" class="tab-content">
-        <div class="card">
-            <h3>Cash Collection Summary</h3>
-            <div id="collectionTableContainer"></div>
         </div>
     </div>
 </div>
@@ -150,109 +136,97 @@
         tbody.innerHTML = data.slice().reverse().map(item => {
             const duty = parseFloat(item.duty || 0);
             const cash = parseFloat(item.cash || 0);
+            const isPaid = item.status === 'Paid';
             dutySum += duty;
-            if(item.status === 'Paid') profitSum += (cash - duty);
+            if(isPaid) profitSum += (cash - duty);
 
             return `
-            <tr data-id="${item.beNo}">
-                <td class="no-print">
-                    <input type="checkbox" class="row-check" 
-                        data-be="${item.beNo}" 
-                        data-duty="${duty}" 
-                        onclick="updateSelection()">
-                </td>
+            <tr>
+                <td><input type="checkbox" class="row-check" data-be="${item.beNo}" data-duty="${duty}" onclick="updateSelection()"></td>
                 <td>${item.date}</td>
                 <td><b>${item.ain}</b><br>${item.beNo}</td>
                 <td>${duty.toFixed(2)}</td>
                 <td>${cash.toFixed(2)}</td>
-                <td><span class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status || 'Pending'}</span></td>
-                <td class="no-print">
-                    <button class="btn btn-del" onclick="deleteData('${item.beNo}')"><i class="fas fa-trash"></i></button>
+                <td><span class="${isPaid ? 'status-paid' : 'status-pending'}">${item.status || 'Pending'}</span></td>
+                <td>
+                    <div style="display:flex; gap:5px; justify-content:center;">
+                        ${!isPaid ? `<button class="btn btn-single-pay" onclick="singlePay('${item.beNo}', ${duty})"><i class="fas fa-dollar-sign"></i> Pay</button>` : ''}
+                        <button class="btn btn-del" onclick="deleteData('${item.beNo}')"><i class="fas fa-trash"></i></button>
+                    </div>
                 </td>
             </tr>`;
         }).join('');
 
         document.getElementById('statDuty').innerText = dutySum.toFixed(2);
         document.getElementById('statProfit').innerText = profitSum.toFixed(2);
-        
-        // সিলেকশন রিসেট
-        document.getElementById('selectAll').checked = false;
         updateSelection();
     }
 
-    // --- Selection Logic ---
-    function toggleSelectAll() {
-        const isChecked = document.getElementById('selectAll').checked;
-        document.querySelectorAll('.row-check').forEach(cb => {
-            cb.checked = isChecked;
-            cb.closest('tr').classList.toggle('selected-row', isChecked);
+    // Single Payment Logic
+    async function singlePay(beNo, duty) {
+        const cash = prompt(`B/E: ${beNo}\nDuty: ${duty}\nEnter Cash Received:`, duty);
+        if (cash === null) return;
+        const method = prompt("Payment Method (Cash/Bkash/Bank):", "Cash");
+        if (!method) return;
+
+        await fetch(`${API_URL}/beNo/${beNo}`, {
+            method: 'PATCH',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ status: 'Paid', cash: cash, method: method, profit: (parseFloat(cash) - duty).toFixed(2) })
         });
+        loadRecords();
+    }
+
+    // Selection Logic
+    function toggleSelectAll() {
+        const master = document.getElementById('selectAll').checked;
+        document.querySelectorAll('.row-check').forEach(c => c.checked = master);
         updateSelection();
     }
 
     function updateSelection() {
         const selected = document.querySelectorAll('.row-check:checked');
         let totalDuty = 0;
-        selected.forEach(cb => {
-            totalDuty += parseFloat(cb.dataset.duty);
-            cb.closest('tr').classList.add('selected-row');
+        selected.forEach(c => {
+            totalDuty += parseFloat(c.dataset.duty);
+            c.closest('tr').classList.add('selected-row');
         });
+        document.querySelectorAll('.row-check:not(:checked)').forEach(c => c.closest('tr').classList.remove('selected-row'));
         
-        // হাইলাইট হ্যান্ডলিং
-        document.querySelectorAll('.row-check:not(:checked)').forEach(cb => {
-            cb.closest('tr').classList.remove('selected-row');
-        });
-
         document.getElementById('selectedCount').innerText = selected.length;
         document.getElementById('selectedDutyTotal').innerText = totalDuty.toFixed(2);
         document.getElementById('selectionSummary').style.display = selected.length > 0 ? 'flex' : 'none';
     }
 
-    // --- Bulk Payment Modal Logic ---
     function openPaymentModal() {
-        const selected = document.querySelectorAll('.row-check:checked');
-        document.getElementById('modalCount').innerText = selected.length;
+        document.getElementById('modalCount').innerText = document.querySelectorAll('.row-check:checked').length;
         document.getElementById('paymentModal').style.display = 'block';
     }
 
-    function closeModal() {
-        document.getElementById('paymentModal').style.display = 'none';
-    }
+    function closeModal() { document.getElementById('paymentModal').style.display = 'none'; }
 
     async function processBulkPay() {
         const selected = document.querySelectorAll('.row-check:checked');
         const method = document.getElementById('bulkMethod').value;
-        
-        if(!confirm(selected.length + " টি রেকর্ড পেইড করতে চান?")) return;
-        
         closeModal();
         for(let cb of selected) {
-            const beNo = cb.dataset.be;
-            const duty = cb.dataset.duty;
-            // Bulk Pay এ আমরা ডিউটি অ্যামাউন্টকেই ক্যাশ হিসেবে ধরে প্রফিট ০ করছি।
-            await fetch(`${API_URL}/beNo/${beNo}`, {
+            await fetch(`${API_URL}/beNo/${cb.dataset.be}`, {
                 method: 'PATCH',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ status: 'Paid', cash: duty, method: method, profit: 0 })
+                body: JSON.stringify({ status: 'Paid', cash: cb.dataset.duty, method: method, profit: 0 })
             });
         }
         loadRecords();
     }
 
     async function deleteData(beNo) {
-        if(!confirm("ডিলিট করতে চান?")) return;
-        await fetch(`${API_URL}/beNo/${beNo}`, { method: 'DELETE' });
-        loadRecords();
+        if(confirm("Delete?")) { await fetch(`${API_URL}/beNo/${beNo}`, { method: 'DELETE' }); loadRecords(); }
     }
 
     function openTab(tabId, btn) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(tabId).classList.add('active');
-        btn.classList.add('active');
     }
-
-    function logout() { localStorage.removeItem('customsUser'); location.reload(); }
 </script>
 </body>
 </html>
