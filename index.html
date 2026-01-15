@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customs Pro | Bulk & Discount Edition</title>
+    <title>Customs Pro | Icon Edition</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         :root {
@@ -15,8 +16,9 @@
         .login-card { padding: 40px; border-radius: 16px; box-shadow: var(--card-shadow); text-align: center; width: 320px; }
         #dashboard { display: none; padding: 20px; max-width: 1400px; margin: 0 auto; }
         
+        /* Tab Styling */
         .tab-bar { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 2px solid #ddd; }
-        .tab-btn { padding: 10px 20px; border: none; cursor: pointer; background: #e0e0e0; border-radius: 8px 8px 0 0; font-weight: bold; }
+        .tab-btn { padding: 10px 20px; border: none; cursor: pointer; background: #e0e0e0; border-radius: 8px 8px 0 0; font-weight: bold; transition: 0.3s; }
         .tab-btn.active { background: var(--primary); color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -31,16 +33,24 @@
         .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); margin-bottom: 20px; }
         .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
         input, select { padding: 10px; border: 1px solid #dadce0; border-radius: 8px; font-size: 14px; width: 100%; box-sizing: border-box; }
-        .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .btn-save { background: var(--success); color: white; }
         
+        /* Icon Button Styling */
+        .btn { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; transition: 0.2s; }
+        .btn-save { background: var(--success); color: white; width: 100%; justify-content: center; }
+        .btn-pay { background: #e8f0fe; color: var(--primary); }
+        .btn-pay:hover { background: var(--primary); color: white; }
+        .btn-del { background: #fce8e6; color: var(--danger); }
+        .btn-del:hover { background: var(--danger); color: white; }
+        .btn-print { background: #34495e; color: white; }
+
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        th, td { padding: 10px; text-align: center; border-bottom: 1px solid #eee; }
+        th, td { padding: 12px 10px; text-align: center; border-bottom: 1px solid #eee; }
         th { background: #f1f3f4; color: #5f6368; }
         tr.selected { background-color: #e8f0fe !important; }
-        .status-paid { color: var(--success); font-weight: bold; }
-        .status-pending { color: var(--danger); font-weight: bold; }
-        #selectionSummary { background: #fffde7; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: none; border: 1px solid #fff59d; }
+        .status-paid { color: var(--success); font-weight: bold; background: #e6f4ea; padding: 4px 8px; border-radius: 4px; }
+        .status-pending { color: var(--danger); font-weight: bold; background: #fce8e6; padding: 4px 8px; border-radius: 4px; }
+        #selectionSummary { background: #fffde7; padding: 15px; border-radius: 12px; margin-bottom: 15px; display: none; border: 1px solid #fff59d; }
+        
         @media print { .no-print { display: none !important; } #dashboard { display: block !important; } }
     </style>
 </head>
@@ -60,20 +70,23 @@
             <img id="userImg" src="">
             <div><b id="userName"></b><br><small id="userEmail"></small></div>
         </div>
-        <button class="btn" style="background:#eee;" onclick="logout()">Logout</button>
+        <div class="no-print">
+            <button class="btn btn-print" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+            <button class="btn" style="background:#eee;" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
     </div>
 
     <div class="tab-bar no-print">
-        <button class="tab-btn active" onclick="openTab('mainTab', this)">B/E Records</button>
-        <button class="tab-btn" onclick="openTab('collectionTab', this)">Cash Collection (Discount)</button>
+        <button class="tab-btn active" onclick="openTab('mainTab', this)"><i class="fas fa-list"></i> B/E Records</button>
+        <button class="tab-btn" onclick="openTab('collectionTab', this)"><i class="fas fa-hand-holding-dollar"></i> Cash Collection</button>
     </div>
 
     <div id="mainTab" class="tab-content active">
         <div class="stats-grid">
             <div class="stat-card">Records <b id="statMine">0</b></div>
-            <div class="stat-card">Duty <b id="statDuty">0.00</b></div>
-            <div class="stat-card">Cash <b id="statCash">0.00</b></div>
-            <div class="stat-card">Profit <b id="statProfit">0.00</b></div>
+            <div class="stat-card">Total Duty <b id="statDuty">0.00</b></div>
+            <div class="stat-card">Cash Received <b id="statCash">0.00</b></div>
+            <div class="stat-card">Net Profit <b id="statProfit">0.00</b></div>
         </div>
 
         <div class="card no-print">
@@ -90,8 +103,8 @@
         </div>
 
         <div id="selectionSummary" class="no-print">
-            Selected: <b id="selectedCount">0</b> | Total Duty: <b id="selectedDutyTotal">0.00</b>
-            <button id="bulkPayBtn" class="btn" style="background:var(--primary); color:white; margin-left:10px;" onclick="bulkPay()">Bulk Pay</button>
+            <i class="fas fa-check-circle" style="color:#fbc02d"></i> Selected: <b id="selectedCount">0</b> | Total Duty: <b id="selectedDutyTotal">0.00</b>
+            <button id="bulkPayBtn" class="btn" style="background:var(--primary); color:white; margin-left:15px;" onclick="bulkPay()"><i class="fas fa-file-invoice-dollar"></i> Bulk Pay</button>
         </div>
 
         <div class="card no-print">
@@ -100,7 +113,7 @@
                 <input type="text" id="declarant" placeholder="Declarant Name" readonly style="background:#f1f3f4;">
                 <input type="text" id="beNo" placeholder="B/E No" required>
                 <input type="number" id="duty" placeholder="Duty Amt" step="any" required>
-                <button type="submit" class="btn btn-save">Save Record</button>
+                <button type="submit" class="btn btn-save"><i class="fas fa-save"></i> Save Record</button>
             </form>
         </div>
 
@@ -119,7 +132,7 @@
 
     <div id="collectionTab" class="tab-content">
         <div class="card no-print">
-            <h3>New Collection (Discount Feature)</h3>
+            <h3><i class="fas fa-calculator"></i> AIN Wise Bulk Entry</h3>
             <form id="collectionForm" class="form-grid">
                 <input type="text" id="colAin" placeholder="AIN No" oninput="autoFill('colAin', 'colDeclarant')" required>
                 <input type="text" id="colDeclarant" placeholder="Declarant Name" readonly style="background:#f1f3f4;">
@@ -130,13 +143,13 @@
                     <option value="Cash">Cash (নগদ)</option>
                     <option value="Due">Due (বকেয়া)</option>
                 </select>
-                <button type="submit" class="btn btn-save" style="background:var(--primary);">Save Collection</button>
+                <button type="submit" class="btn btn-save" style="background:var(--primary);"><i class="fas fa-paper-plane"></i> Submit Collection</button>
             </form>
         </div>
         <div class="card" style="padding:0; overflow-x: auto;">
             <table>
                 <thead>
-                    <tr><th>Date</th><th>AIN</th><th>Declarant</th><th>Qty</th><th>Total</th><th>Disc.</th><th>Net</th><th>Method</th><th class="no-print">Action</th></tr>
+                    <tr><th>Date</th><th>AIN</th><th>Declarant</th><th>Qty</th><th>Total</th><th>Disc.</th><th>Net Amt</th><th>Method</th><th class="no-print">Action</th></tr>
                 </thead>
                 <tbody id="collectionTableBody"></tbody>
             </table>
@@ -223,7 +236,7 @@
     function renderMainTable(data) {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = data.slice().reverse().map(item => `
-            <tr id="row-${item.beNo}">
+            <tr>
                 <td class="no-print"><input type="checkbox" class="row-check" data-be="${item.beNo}" data-duty="${item.duty}" onclick="updateSelection()"></td>
                 <td>${item.date}</td>
                 <td><small>${item.user.split('@')[0]}</small></td>
@@ -233,8 +246,10 @@
                 <td>${parseFloat(item.cash || 0).toFixed(2)}</td>
                 <td><span class="${item.status === 'Paid' ? 'status-paid' : 'status-pending'}">${item.status}</span></td>
                 <td class="no-print">
-                    ${item.status === 'Pending' ? `<button onclick="paySingle('${item.beNo}', ${item.duty})">Pay</button>` : ''}
-                    <button onclick="deleteData('${item.beNo}', 'main')">Del</button>
+                    <div style="display:flex; gap:5px; justify-content:center;">
+                        ${item.status === 'Pending' ? `<button class="btn btn-pay" title="Pay Now" onclick="paySingle('${item.beNo}', ${item.duty})"><i class="fas fa-credit-card"></i></button>` : ''}
+                        <button class="btn btn-del" title="Delete" onclick="deleteData('${item.beNo}', 'main')"><i class="fas fa-trash"></i></button>
+                    </div>
                 </td>
             </tr>`).join('');
     }
@@ -315,9 +330,11 @@
                 <td>${item.date}</td><td>${item.ain}</td><td>${item.name}</td>
                 <td>${item.beCount}</td><td>${item.totalAmount}</td>
                 <td style="color:red;">-${item.discount}</td>
-                <td style="font-weight:bold;">${item.netAmount}</td>
-                <td><b>${item.method}</b></td>
-                <td class="no-print"><button onclick="deleteData('${item.ain}', 'summary')">Del</button></td>
+                <td style="font-weight:bold; color:green;">${item.netAmount}</td>
+                <td><span class="status-paid" style="background:#e8f0fe; color:#1a73e8;">${item.method}</span></td>
+                <td class="no-print">
+                    <button class="btn btn-del" onclick="deleteData('${item.ain}', 'summary')"><i class="fas fa-trash"></i></button>
+                </td>
             </tr>`).join('');
     }
 
